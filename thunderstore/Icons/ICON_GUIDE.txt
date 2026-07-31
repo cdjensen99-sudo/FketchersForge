@@ -1,0 +1,19 @@
+Place PNG arrowhead icons in this folder.
+
+File names (exact):
+  FF_HeadFire.png
+  FF_HeadFlint.png
+  FF_HeadBronze.png
+  FF_HeadIron.png
+  FF_HeadSilver.png
+  FF_HeadObsidian.png
+  FF_HeadPoison.png
+  FF_HeadFrost.png
+  FF_HeadNeedle.png
+  FF_HeadCarapace.png
+  FF_HeadCharred.png
+
+Recommended: 64x64 or 128x128 PNG with transparent background.
+Tip should point upper-right (same angle as Valheim inventory icons).
+
+Reload the world after adding or changing files.
