@@ -2,8 +2,12 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, and **reforge ammunition in the field** with the **Fletcher's knife**.
 
-**Current version:** 0.1.31  
+**Current version:** 0.1.32  
 **Requires:** BepInEx + Jötunn
+
+**Links**
+- **[Team Extreme Discord](https://discord.gg/cCNG8xKXMn)** — setup help, bug reports, and updates
+- **[GitHub — Fletchers Forge](https://github.com/cdjensen99-sudo/FketchersForge)** — source code and issues
 
 ---
 

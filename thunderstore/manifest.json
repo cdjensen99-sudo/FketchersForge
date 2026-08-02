@@ -1,6 +1,6 @@
 {
   "name": "FletchersForge",
-  "version_number": "0.1.31",
+  "version_number": "0.1.32",
   "website_url": "https://github.com/cdjensen99-sudo/FketchersForge",
   "description": "Craft arrow shafts and heads; reforge and split ammunition in the field with the Fletcher's knife. Arrowhead icons embedded in DLL.",
   "dependencies": [

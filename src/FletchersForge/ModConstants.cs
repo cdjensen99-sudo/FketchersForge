@@ -4,7 +4,7 @@ internal static class ModConstants
 {
     public const string ModGuid = "hardwire99.fletchersforge";
     public const string ModName = "Fletchers Forge";
-    public const string ModVersion = "0.1.31";
+    public const string ModVersion = "0.1.32";
 
     /// Square ship cargo crate first; karve "chest" is the wooden chest piece (fallback only).
     public const string HeadDropBoxPrimaryPrefab = "CargoCrate";

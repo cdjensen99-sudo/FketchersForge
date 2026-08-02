@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.32
+
+- README links for GitHub (issues/source) and Team Extreme Discord (help and bug reports).
+
 ## 0.1.31
 
 - **Fletcher's knife no longer breaks while using the bench** — durability disabled; attack damage multiplier set to 0.
