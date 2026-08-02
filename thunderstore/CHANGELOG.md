@@ -2,7 +2,9 @@
 
 ## 0.1.32
 
-- README links for GitHub (issues/source) and Team Extreme Discord (help and bug reports).
+- **Fletcher's knife fix** — no durability loss or combat damage; bench stays open while the knife remains equipped.
+- **Store README** — GitHub and Team Extreme Discord links; gallery images load from the GitHub repo.
+- **Release package** — includes `Icons/` gallery assets and listing `icon.png` for Thunderstore and Hexium.
 
 ## 0.1.31
 

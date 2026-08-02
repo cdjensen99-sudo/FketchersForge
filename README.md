@@ -106,13 +106,13 @@ Recommended: **128×128 PNG**, transparent background. Restart after adding exte
 
 | | | |
 |:---:|:---:|:---:|
-| ![Fire](thunderstore/Icons/FF_HeadFire.png) | ![Flint](thunderstore/Icons/FF_HeadFlint.png) | ![Bronze](thunderstore/Icons/FF_HeadBronze.png) |
+| ![Fire](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadFire.png) | ![Flint](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadFlint.png) | ![Bronze](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadBronze.png) |
 | Fire | Flint | Bronze |
-| ![Iron](thunderstore/Icons/FF_HeadIron.png) | ![Silver](thunderstore/Icons/FF_HeadSilver.png) | ![Obsidian](thunderstore/Icons/FF_HeadObsidian.png) |
+| ![Iron](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadIron.png) | ![Silver](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadSilver.png) | ![Obsidian](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadObsidian.png) |
 | Iron | Silver | Obsidian |
-| ![Poison](thunderstore/Icons/FF_HeadPoison.png) | ![Frost](thunderstore/Icons/FF_HeadFrost.png) | ![Needle](thunderstore/Icons/FF_HeadNeedle.png) |
+| ![Poison](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadPoison.png) | ![Frost](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadFrost.png) | ![Needle](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadNeedle.png) |
 | Poison | Frost | Needle |
-| ![Carapace](thunderstore/Icons/FF_HeadCarapace.png) | ![Charred](thunderstore/Icons/FF_HeadCharred.png) | |
+| ![Carapace](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadCarapace.png) | ![Charred](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadCharred.png) | |
 | Carapace | Charred | |
 
 ---
