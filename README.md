@@ -102,13 +102,13 @@ Recommended: **128×128 PNG**, transparent background. Restart after adding exte
 
 | | | |
 |:---:|:---:|:---:|
-| ![Fire](Icons/FF_HeadFire.png) | ![Flint](Icons/FF_HeadFlint.png) | ![Bronze](Icons/FF_HeadBronze.png) |
+| ![Fire](thunderstore/Icons/FF_HeadFire.png) | ![Flint](thunderstore/Icons/FF_HeadFlint.png) | ![Bronze](thunderstore/Icons/FF_HeadBronze.png) |
 | Fire | Flint | Bronze |
-| ![Iron](Icons/FF_HeadIron.png) | ![Silver](Icons/FF_HeadSilver.png) | ![Obsidian](Icons/FF_HeadObsidian.png) |
+| ![Iron](thunderstore/Icons/FF_HeadIron.png) | ![Silver](thunderstore/Icons/FF_HeadSilver.png) | ![Obsidian](thunderstore/Icons/FF_HeadObsidian.png) |
 | Iron | Silver | Obsidian |
-| ![Poison](Icons/FF_HeadPoison.png) | ![Frost](Icons/FF_HeadFrost.png) | ![Needle](Icons/FF_HeadNeedle.png) |
+| ![Poison](thunderstore/Icons/FF_HeadPoison.png) | ![Frost](thunderstore/Icons/FF_HeadFrost.png) | ![Needle](thunderstore/Icons/FF_HeadNeedle.png) |
 | Poison | Frost | Needle |
-| ![Carapace](Icons/FF_HeadCarapace.png) | ![Charred](Icons/FF_HeadCharred.png) | |
+| ![Carapace](thunderstore/Icons/FF_HeadCarapace.png) | ![Charred](thunderstore/Icons/FF_HeadCharred.png) | |
 | Carapace | Charred | |
 
 ---

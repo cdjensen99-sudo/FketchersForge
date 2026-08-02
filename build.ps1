@@ -78,12 +78,19 @@ if ($Package) {
         Write-Warning "thunderstore\icon.png is missing. Add a 256x256 PNG before uploading."
     }
 
+    $iconsSource = Join-Path $thunderstore "Icons"
+    if (Test-Path $iconsSource) {
+        Copy-Item $iconsSource (Join-Path $thunderstoreStaging "Icons") -Recurse -Force
+    }
+    else {
+        Write-Warning "thunderstore\Icons is missing. README gallery images will not display on Thunderstore."
+    }
+
     if (Test-Path $packagePath) {
         Remove-Item $packagePath -Force
     }
 
-    $packageFiles = Get-ChildItem $thunderstoreStaging -File | ForEach-Object { $_.FullName }
-    Compress-Archive -Path $packageFiles -DestinationPath $packagePath -Force
+    Compress-Archive -Path (Join-Path $thunderstoreStaging "*") -DestinationPath $packagePath -Force
 
     Write-Host "Package: $packagePath"
     Write-Host "Upload to Thunderstore and Hexium (same zip). Team $team, package '$($manifest.name)'."

@@ -21,8 +21,9 @@ internal static class PlayerUpdateFletchPatch
         {
             FletchUiService.Open(__instance);
         }
-        else if (!knifeInHand && knifeWasInHand)
+        else if (FletchUiService.IsBenchUiOpen && !FletchersKnifeHelper.IsKnifeEquipped(__instance))
         {
+            // Close only when the knife is unequipped or gone (not when sheathed).
             FletchUiService.Close();
         }
 

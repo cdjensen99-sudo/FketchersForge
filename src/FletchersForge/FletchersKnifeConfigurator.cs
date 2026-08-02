@@ -1,4 +1,3 @@
-using System.Reflection;
 using Jotunn.Managers;
 using UnityEngine;
 
@@ -15,9 +14,9 @@ internal static class FletchersKnifeConfigurator
         shared.m_maxStackSize = 1;
         shared.m_maxQuality = 1;
         shared.m_value = 0;
-        shared.m_useDurability = true;
-        shared.m_maxDurability = 1;
-        shared.m_durabilityDrain = 1f;
+        shared.m_useDurability = false;
+        shared.m_maxDurability = 0;
+        shared.m_durabilityDrain = 0f;
         shared.m_blockPower = 0;
         shared.m_blockPowerPerLevel = 0;
         shared.m_armor = 0;
@@ -28,18 +27,18 @@ internal static class FletchersKnifeConfigurator
         shared.m_secondaryAttack = null;
 
         shared.m_damages = new HitData.DamageTypes();
-        shared.m_damages.m_pierce = 1f;
         shared.m_damagesPerLevel = new HitData.DamageTypes();
 
         ItemDrop templatePrefab = PrefabManager.Instance.GetPrefab("KnifeCopper")?.GetComponent<ItemDrop>();
         if (templatePrefab?.m_itemData?.m_shared?.m_attack == null)
         {
-            FletchersForgePlugin.Log?.LogWarning("Fletcher's knife: KnifeCopper attack template missing.");
+            shared.m_attack = null;
+            FletchersForgePlugin.Log?.LogWarning("Fletcher's knife: KnifeCopper attack template missing; knife has no swing.");
             return;
         }
 
         shared.m_attack = CloneAttack(templatePrefab.m_itemData.m_shared.m_attack);
-        shared.m_attack.m_damageMultiplier = 1f;
+        shared.m_attack.m_damageMultiplier = 0f;
         shared.m_attack.m_raiseSkillAmount = 0f;
         shared.m_attack.m_attackStamina = 0;
         shared.m_attack.m_selfDamage = 0;
@@ -48,7 +47,7 @@ internal static class FletchersKnifeConfigurator
     private static Attack CloneAttack(Attack source)
     {
         Attack clone = new Attack();
-        foreach (FieldInfo field in typeof(Attack).GetFields(BindingFlags.Instance | BindingFlags.Public))
+        foreach (var field in typeof(Attack).GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
         {
             field.SetValue(clone, field.GetValue(source));
         }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.31
+
+- **Fletcher's knife no longer breaks while using the bench** — durability disabled; attack damage multiplier set to 0.
+- **Bench stays open** while the knife remains equipped (closing when sheathed was too aggressive).
+
 ## 0.1.30
 
 - **Fletcher's knife finalized** — field-tool description, 1 pierce damage, 1 durability (breaks after one swing), no skill gain on attack.

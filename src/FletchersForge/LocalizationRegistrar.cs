@@ -11,7 +11,7 @@ internal static class LocalizationRegistrar
         loc.AddTranslation("English", "FF_ModName", "Fletchers Forge");
         loc.AddTranslation("English", "FF_FletchersKnife", "Fletcher's knife");
         loc.AddTranslation("English", "FF_FletchersKnife_desc",
-            "Field tool for the Fletcher's bench. Hold it ready to open the bench, then reforge or split arrows. Not meant for combat — 1 damage and breaks after one swing.");
+            "Field tool for the Fletcher's bench. Hold it ready to open the bench, then reforge or split arrows. Not meant for combat — no damage and does not wear out from use.");
         loc.AddTranslation("English", "FF_ShaftStandard", "Arrow shaft");
         loc.AddTranslation("English", "FF_ShaftStandard_desc", "A wooden arrow shaft with fletching.");
         loc.AddTranslation("English", "FF_ShaftNeedle", "Needle arrow shaft");
