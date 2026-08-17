@@ -77,10 +77,17 @@
       <HintPath>$(ValheimManaged)\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="EmbeddedIcons\*.png" />
+    <EmbeddedResource Include="EmbeddedBundles\fletchersforge">
+      <LogicalName>fletchersforge</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <Target Name="DeployToR2ModManProfile" AfterTargets="Build">

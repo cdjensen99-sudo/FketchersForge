@@ -1,8 +1,8 @@
 # Fletchers Forge
 
-Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, and **reforge ammunition in the field** with the **Fletcher's knife**.
+Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 0.1.32  
+**Current version:** 0.2.0  
 **Requires:** BepInEx + Jötunn
 
 **Links**
@@ -15,23 +15,37 @@ Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components 
 
 | You can… | Where |
 |----------|--------|
-| Craft arrow **shafts** and **heads** (stacks of 20) | Workbench / Forge / Black forge |
+| Craft arrow **shafts** and **heads** (batches of 20) | Workbench / Forge / Black forge |
 | **Split** arrows into shaft + head | Field — Fletcher's bench |
 | **Reforge** shaft + head into arrows | Field — Fletcher's bench |
 | **Rehead** arrows (swap head type) | Field — Fletcher's bench |
+| Keep several arrow types in a **quiver** and pick which the bow uses | Fletcher's quiver |
 | Carry finished ammo as normal **vanilla arrows** | Inventory / bow |
 
 There is **no material salvage** beyond shafts and heads (no wood/ore back from splitting).
 
 ---
 
+## Custom models
+
+This release adds custom 3D models:
+
+| Model | In game |
+|-------|---------|
+| **Arrowhead bag** | Dropped arrowheads appear as a leather pouch, not a crate. |
+| **Fletcher's dagger** | The Fletcher's knife uses this dagger mesh when held or dropped. |
+| **Quiver** | The Fletcher's quiver uses this model when held or dropped. |
+
+---
+
 ## Quick start
 
-1. Install **BepInEx** and **Jötunn** (see Dependencies).
+1. Install **BepInEx** and **Jötunn**.
 2. Install **Fletchers Forge** into `BepInEx/plugins/Hardwire99-FletchersForge/`.
 3. Craft a **Fletcher's knife** at the **Forge** (level 1).
 4. Hold the knife in your **hand** — the **Fletcher's bench** opens automatically.
-5. Use **Reforge** or **Split** (buttons or keys below). Results go **directly into your inventory** — there is no take-all step.
+5. Use **Reforge** or **Split**. Results go **directly into your inventory**.
+6. Craft a **Fletcher's quiver**, keep it in your inventory, and drag arrows into its eight slots.
 
 ---
 
@@ -40,9 +54,50 @@ There is **no material salvage** beyond shafts and heads (no wood/ore back from 
 | | |
 |--|--|
 | **Recipe** | Forge level 1 — Fine wood ×1, Copper ×1, Leather scraps ×1 |
-| **Role** | Opens the field bench; used for reforge / split only |
+| **Look** | Custom dagger model |
+| **Role** | Opens the field bench; used for reforge / split |
 | **Combat** | No damage; does not wear out from normal use |
 | **Bench** | Auto-opens when the knife is **in your hand**; stays open while equipped |
+
+---
+
+## Fletcher's quiver
+
+Craft a **Fletcher's quiver** and keep it in your inventory. It is not worn; having it on you is enough.
+
+| | |
+|--|--|
+| **Recipe** | Forge level 1 — Deer hide ×4, Bronze ×2, Fine wood ×4 |
+| **Slots** | **8**, stored **on the quiver item** (they travel with that quiver) |
+| **Accepts** | Vanilla arrows, shafts, arrowheads, and the Fletcher's knife |
+
+### Loading the slots
+
+Open your **inventory**. The eight quiver slots sit **under the backpack**. Drag arrows (or other accepted items) in and out like any other inventory.
+
+### Choosing ammo
+
+The bow shoots from the **selected** quiver slot.
+
+- If that slot has arrows, those are used.
+- If it is empty or not arrows, the bow uses ammo from your **normal inventory** as usual.
+
+**While inventory is closed**, the quiver shows as a HUD bar under the hotbar.
+
+| How | Default |
+|-----|---------|
+| Hold **[+1** … **[+8** | Hold **[** and press **1**–**8** |
+| Click a HUD slot | Hold **~** (the key left of 1) to free the mouse, then click |
+
+Selecting a slot that holds the **Fletcher's knife** equips the knife.
+
+### Moving the HUD bar
+
+The closed-inventory quiver bar can be moved.
+
+1. Hold **~** to free the mouse.
+2. Drag the **left grip** (the small handle on the left of the bar) to a new spot. The position is saved.
+3. **Right-click** that grip (still holding **~**) to put the bar back in the default place.
 
 ---
 
@@ -56,11 +111,9 @@ There is **no material salvage** beyond shafts and heads (no wood/ore back from 
 | Needle arrow shaft | Workbench 4 | Feathers ×2 → **20** shafts |
 | Ashwood arrow shaft | Workbench 3 | Black wood ×8, Feathers ×2 → **20** shafts |
 
-**World drop:** small arrow-shaft mesh (not the cargo crate).
-
 ### Arrowheads (inventory stack **200**)
 
-Craft output is always **20** per recipe batch.
+Craft output is always **20** per recipe batch. Dropped heads use the **arrowhead bag** model.
 
 | Head | Station | Materials |
 |------|---------|-----------|
@@ -76,50 +129,11 @@ Craft output is always **20** per recipe batch.
 | Carapace | Black forge 1 | Carapace ×4 |
 | Charred | Black forge 3 | Charred bone ×4 |
 
-**World drop:** small **cargo crate** mesh (25% scale) — a square ship crate, not a chest with a lid.
-
-### Arrowhead inventory icons (embedded PNG)
-
-Arrowhead icons ship **inside `FletchersForge.dll`** — players do **not** need an `Icons` folder in their profile.
-
-Optional overrides: set `AllowExternalHeadIconOverrides = true` in config, then place PNGs in:
-
-`BepInEx/plugins/Hardwire99-FletchersForge/Icons/`
-
-| File name | Arrow type |
-|-----------|------------|
-| `FF_HeadFire.png` | Fire |
-| `FF_HeadFlint.png` | Flint |
-| `FF_HeadBronze.png` | Bronze |
-| `FF_HeadIron.png` | Iron |
-| `FF_HeadSilver.png` | Silver |
-| `FF_HeadObsidian.png` | Obsidian |
-| `FF_HeadPoison.png` | Poison |
-| `FF_HeadFrost.png` | Frost |
-| `FF_HeadNeedle.png` | Needle |
-| `FF_HeadCarapace.png` | Carapace |
-| `FF_HeadCharred.png` | Charred |
-
-Recommended: **128×128 PNG**, transparent background. Restart after adding external overrides.
-
-#### Icon gallery (bundled examples)
-
-| | | |
-|:---:|:---:|:---:|
-| ![Fire](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadFire.png) | ![Flint](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadFlint.png) | ![Bronze](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadBronze.png) |
-| Fire | Flint | Bronze |
-| ![Iron](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadIron.png) | ![Silver](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadSilver.png) | ![Obsidian](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadObsidian.png) |
-| Iron | Silver | Obsidian |
-| ![Poison](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadPoison.png) | ![Frost](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadFrost.png) | ![Needle](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadNeedle.png) |
-| Poison | Frost | Needle |
-| ![Carapace](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadCarapace.png) | ![Charred](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/thunderstore/Icons/FF_HeadCharred.png) | |
-| Carapace | Charred | |
-
 ---
 
 ## Field bench (Fletcher's bench)
 
-Opens automatically when the **Fletcher's knife** is in your hand (same as holding it ready to use).
+Opens automatically when the **Fletcher's knife** is in your hand.
 
 ### Slots
 
@@ -130,14 +144,12 @@ Opens automatically when the **Fletcher's knife** is in your hand (same as holdi
 
 ### Actions
 
-Results are added to your **inventory** immediately. You do **not** use Take all / Place stacks — those vanilla container actions are **not** part of this workflow.
+Results go into your **inventory** immediately.
 
-| Action | Button label | Default key | Effect |
-|--------|--------------|-------------|--------|
-| **Reforge** | Reforge | *(none — use button)* | Shaft + head → **20** arrows; or arrow + new head → rehead |
-| **Split** | Split | *(none — use button)* | **20** arrows → shaft + head (wood arrows → shaft only) |
-
-The wood panel shows **Reforge** and **Split** in the usual container button row (repurposed from vanilla UI chrome).
+| Action | Button | Default key | Effect |
+|--------|--------|-------------|--------|
+| **Reforge** | Reforge | *(none — use the button)* | Shaft + head → **20** arrows; or arrow + new head → rehead |
+| **Split** | Split | *(none — use the button)* | **20** arrows → shaft + head (wood arrows → shaft only) |
 
 ---
 
@@ -164,60 +176,21 @@ The wood panel shows **Reforge** and **Split** in the usual container button row
 
 File: `BepInEx/config/hardwire99.fletchersforge.cfg`
 
+Restart Valheim (or reload the profile) after changing keys.
+
 | Section | Key | Default | Description |
 |---------|-----|---------|-------------|
 | **General** | `Enabled` | `true` | Turn the entire mod off without uninstalling. |
-| **Icons** | `UseEmbeddedHeadIcons` | `true` | Load arrowhead icons bundled in the DLL. |
-| **Icons** | `AllowExternalHeadIconOverrides` | `false` | When `true`, PNGs in the plugin `Icons` folder override embedded art. |
 | **Controls** | `Reforge` | `None` | Reforge hotkey while the bench is open (`None` = button only). |
 | **Controls** | `Split` | `None` | Split hotkey while the bench is open (`None` = button only). |
+| **Quiver** | `CursorKey` | `BackQuote` (**~**) | Hold to free the mouse: click HUD slots and drag the bar. |
+| **Quiver** | `SelectModifier` | `LeftBracket` (**[**) | Hold with a slot key to choose ammo. `None` disables keyboard select (click still works). |
+| **Quiver** | `Slot1` … `Slot8` | `Alpha1` … `Alpha8` | Keys used with SelectModifier for each quiver slot. |
+| **Quiver** | `HudOffsetY` | `0` | Extra vertical shift for the **default** HUD spot. Negative moves it down. Ignored after you drag the bar. |
 
 There is **no key to open the bench** — it opens when the knife is **in your hand**.
 
-After editing the config, restart Valheim (or reload the profile).
-
----
-
-## Bjornheim / legacy save cleanup
-
-Early builds (0.1.1–0.1.8) spawned **phantom bench objects** in the world save. That can cause **ChestSnap** errors and hundreds of unknown ZDOs (hash `555343901`).
-
-**0.1.30** runs cleanup after ZDOs load (`ZDOMan.Load`), on player spawn, and via `fletcher.cleanup`. It also sanitizes null ChestSnap network views so phantom benches from early builds no longer spam errors.
-
-### Manual cleanup (recommended once on affected saves)
-
-1. Load the world (as host / single-player).
-2. Open the console (**F5**).
-3. Run: `fletcher.cleanup`
-4. Run: `save`
-5. Restart the game and confirm ChestSnap no longer spams errors.
-
----
-
-## Multiplayer notes
-
-- Field bench uses a **local inventory** (not a world container) — each player reforges their own items.
-- Knife equip / bench UI runs only for the **local player** (`IsOwner()`).
-- Legacy ZDO cleanup runs on the **server** when purging save data; clients still sanitize null network views for ChestSnap.
-- **Not yet playtested** on dedicated servers; code paths are local-player scoped and should be safe, but verify with your group.
-
----
-
-## Folder layout (plugin)
-
-```
-Hardwire99-FletchersForge/
-  FletchersForge.dll    (includes embedded arrowhead PNG icons)
-  manifest.json
-  Icons/                (optional — only if AllowExternalHeadIconOverrides = true)
-```
-
----
-
-## Known / upcoming
-
-- [ ] Quiver and Unity Store weapon assets
-- [ ] Dedicated multiplayer playtest
+HUD position after you drag the bar is saved in the same Quiver section. Right-click the left grip while holding the cursor key to restore the default spot.
 
 ---
 

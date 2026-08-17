@@ -1,0 +1,338 @@
+using System;
+using System.Collections.Generic;
+using HarmonyLib;
+using Jotunn.Managers;
+using UnityEngine;
+
+namespace FletchersForge;
+
+/// Eight fletcher slots stored on the quiver item itself.
+internal static class QuiverInventory
+{
+    internal const string ContentsKey = "FF_QuiverInventory";
+    internal const string SelectedSlotKey = "FF_QuiverSlot";
+
+    private static Inventory inventory;
+    private static ItemDrop.ItemData boundQuiver;
+    private static bool saving;
+
+    internal static Inventory Inventory
+    {
+        get
+        {
+            EnsureCreated();
+            return inventory;
+        }
+    }
+
+    internal static int SelectedSlot { get; private set; }
+
+    internal static bool Is(Inventory other)
+    {
+        return inventory != null && other == inventory;
+    }
+
+    internal static void EnsureCreated()
+    {
+        if (inventory != null)
+        {
+            return;
+        }
+
+        Sprite background = null;
+        GameObject chestPrefab = PrefabManager.Instance.GetPrefab("chest");
+        Container vanillaContainer = chestPrefab != null ? chestPrefab.GetComponent<Container>() : null;
+        if (vanillaContainer != null)
+        {
+            background = vanillaContainer.m_bkg;
+        }
+
+        inventory = new Inventory("$FF_Quiver", background, ModConstants.QuiverSlotCount, 1);
+        inventory.m_onChanged += OnInventoryChanged;
+    }
+
+    internal static void SyncFromPlayer(Player player)
+    {
+        EnsureCreated();
+        ItemDrop.ItemData quiver = FindFirstQuiver(player);
+        if (quiver == boundQuiver)
+        {
+            return;
+        }
+
+        SaveBound();
+        boundQuiver = quiver;
+        LoadBound();
+    }
+
+    internal static ItemDrop.ItemData FindFirstQuiver(Player player)
+    {
+        Inventory playerInventory = player?.GetInventory();
+        if (playerInventory == null)
+        {
+            return null;
+        }
+
+        foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
+        {
+            if (item?.m_dropPrefab != null && ArrowAssemblyRegistry.IsQuiverPrefab(item.m_dropPrefab.name))
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    internal static bool PlayerHasQuiver(Player player) => FindFirstQuiver(player) != null;
+
+    internal static bool Contains(ItemDrop.ItemData item)
+    {
+        return inventory != null && item != null && inventory.ContainsItem(item);
+    }
+
+    internal static bool CanAccept(ItemDrop.ItemData item)
+    {
+        if (item?.m_dropPrefab == null)
+        {
+            return false;
+        }
+
+        return ArrowAssemblyRegistry.IsQuiverStorageItem(item.m_dropPrefab.name);
+    }
+
+    /// EquipItem requires the item to live in the player inventory. Set this while calling it for quiver items.
+    internal static bool AllowPlayerInventoryContainQuiverItem { get; set; }
+
+    internal static bool TryEquipFromQuiver(Humanoid character, ItemDrop.ItemData item, bool triggerEquipEffects)
+    {
+        if (character == null || item == null || !Contains(item))
+        {
+            return false;
+        }
+
+        AllowPlayerInventoryContainQuiverItem = true;
+        try
+        {
+            return character.EquipItem(item, triggerEquipEffects);
+        }
+        finally
+        {
+            AllowPlayerInventoryContainQuiverItem = false;
+        }
+    }
+
+    internal static void EquipAsAmmo(Humanoid character, ItemDrop.ItemData arrow)
+    {
+        if (character == null || arrow == null)
+        {
+            return;
+        }
+
+        if (character.GetAmmoItem() == arrow)
+        {
+            return;
+        }
+
+        ItemDrop.ItemData current = character.GetAmmoItem();
+        if (current != null)
+        {
+            character.UnequipItem(current, triggerEquipEffects: false);
+        }
+
+        Traverse.Create(character).Field("m_ammoItem").SetValue(arrow);
+        arrow.m_equipped = true;
+    }
+
+    internal static float GetTotalWeight()
+    {
+        return inventory != null ? inventory.GetTotalWeight() : 0f;
+    }
+
+    internal static bool IsTeleportable()
+    {
+        return inventory == null || inventory.IsTeleportable();
+    }
+
+    internal static ItemDrop.ItemData GetSelectedItem()
+    {
+        EnsureCreated();
+        return inventory.GetItemAt(SelectedSlot, 0);
+    }
+
+    internal static bool TryGetSelectedArrow(ItemDrop.ItemData weapon, out ItemDrop.ItemData arrow)
+    {
+        arrow = GetSelectedItem();
+        if (arrow?.m_dropPrefab == null || !ArrowAssemblyRegistry.IsArrowPrefab(arrow.m_dropPrefab.name))
+        {
+            arrow = null;
+            return false;
+        }
+
+        if (weapon?.m_shared != null &&
+            !string.IsNullOrEmpty(weapon.m_shared.m_ammoType) &&
+            arrow.m_shared.m_ammoType != weapon.m_shared.m_ammoType)
+        {
+            arrow = null;
+            return false;
+        }
+
+        return true;
+    }
+
+    internal static void ActivateSlot(Player player, int slot)
+    {
+        if (player == null || slot < 0 || slot >= ModConstants.QuiverSlotCount)
+        {
+            return;
+        }
+
+        SyncFromPlayer(player);
+        if (boundQuiver == null)
+        {
+            return;
+        }
+
+        SelectedSlot = slot;
+        SaveBound();
+
+        ItemDrop.ItemData item = inventory.GetItemAt(slot, 0);
+        if (item?.m_dropPrefab == null)
+        {
+            return;
+        }
+
+        if (ArrowAssemblyRegistry.IsArrowPrefab(item.m_dropPrefab.name))
+        {
+            if (!TryEquipFromQuiver(player, item, triggerEquipEffects: true))
+            {
+                EquipAsAmmo(player, item);
+            }
+
+            return;
+        }
+
+        if (ArrowAssemblyRegistry.IsKnifePrefab(item.m_dropPrefab.name))
+        {
+            TryEquipFromQuiver(player, item, triggerEquipEffects: true);
+        }
+    }
+
+    internal static void ConsumeArrow(ItemDrop.ItemData arrow, int amount)
+    {
+        if (inventory == null || arrow == null)
+        {
+            return;
+        }
+
+        inventory.RemoveItem(arrow, amount);
+        SaveBound();
+    }
+
+    internal static void SaveBound()
+    {
+        if (boundQuiver == null)
+        {
+            return;
+        }
+
+        EnsureCreated();
+        saving = true;
+        try
+        {
+            Dictionary<string, string> data = EnsureCustomData(boundQuiver);
+            ZPackage pkg = new ZPackage();
+            inventory.Save(pkg);
+            data[ContentsKey] = Convert.ToBase64String(pkg.GetArray());
+            data[SelectedSlotKey] = SelectedSlot.ToString();
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    internal static void MigrateLegacyPlayerData(Player player)
+    {
+        if (player?.m_customData == null)
+        {
+            return;
+        }
+
+        if (!player.m_customData.TryGetValue(ModConstants.QuiverSaveKey, out string data) ||
+            string.IsNullOrEmpty(data))
+        {
+            return;
+        }
+
+        ItemDrop.ItemData quiver = FindFirstQuiver(player);
+        if (quiver != null)
+        {
+            Dictionary<string, string> quiverData = EnsureCustomData(quiver);
+            if (!quiverData.ContainsKey(ContentsKey))
+            {
+                quiverData[ContentsKey] = data;
+            }
+        }
+
+        player.m_customData.Remove(ModConstants.QuiverSaveKey);
+        SyncFromPlayer(player);
+    }
+
+    private static void LoadBound()
+    {
+        EnsureCreated();
+        saving = true;
+        try
+        {
+            inventory.RemoveAll();
+            SelectedSlot = 0;
+            if (boundQuiver == null)
+            {
+                return;
+            }
+
+            Dictionary<string, string> custom = EnsureCustomData(boundQuiver);
+            if (custom.TryGetValue(ContentsKey, out string data) &&
+                !string.IsNullOrEmpty(data))
+            {
+                try
+                {
+                    inventory.Load(new ZPackage(Convert.FromBase64String(data)));
+                }
+                catch (Exception ex)
+                {
+                    FletchersForgePlugin.Log?.LogWarning($"Failed to load quiver contents: {ex.Message}");
+                }
+            }
+
+            if (custom.TryGetValue(SelectedSlotKey, out string slotText) &&
+                int.TryParse(slotText, out int slot))
+            {
+                SelectedSlot = Mathf.Clamp(slot, 0, ModConstants.QuiverSlotCount - 1);
+            }
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private static Dictionary<string, string> EnsureCustomData(ItemDrop.ItemData item)
+    {
+        if (item.m_customData == null)
+        {
+            item.m_customData = new Dictionary<string, string>();
+        }
+
+        return item.m_customData;
+    }
+
+    private static void OnInventoryChanged()
+    {
+        if (!saving)
+        {
+            SaveBound();
+        }
+    }
+}

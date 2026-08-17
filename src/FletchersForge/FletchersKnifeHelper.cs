@@ -59,9 +59,19 @@ internal static class FletchersKnifeHelper
         return method.Invoke(player, null) as ItemDrop.ItemData;
     }
 
-    private static bool IsKnife(ItemDrop.ItemData item)
+    internal static bool IsKnife(ItemDrop.ItemData item)
     {
-        if (item?.m_dropPrefab == null)
+        if (item == null)
+        {
+            return false;
+        }
+
+        if (item.m_shared?.m_name == "$FF_FletchersKnife")
+        {
+            return true;
+        }
+
+        if (item.m_dropPrefab == null)
         {
             return false;
         }

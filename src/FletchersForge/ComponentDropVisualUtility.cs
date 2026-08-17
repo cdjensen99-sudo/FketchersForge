@@ -33,7 +33,170 @@ internal static class ComponentDropVisualUtility
             return;
         }
 
+        if (TryApplyHeadPouchVisual(item.ItemDrop.gameObject))
+        {
+            return;
+        }
+
         ApplyShipwreckBoxVisual(item.ItemDrop.gameObject);
+    }
+
+    private static bool TryApplyHeadPouchVisual(GameObject dropPrefab)
+    {
+        GameObject pouchPrefab = AssetBundleLoader.HeadPouchPrefab;
+        if (pouchPrefab == null)
+        {
+            return false;
+        }
+
+        RemoveDropVisual(dropPrefab);
+
+        GameObject visualRoot = new GameObject("FF_DropVisual");
+        visualRoot.transform.SetParent(dropPrefab.transform, false);
+        visualRoot.transform.localPosition = Vector3.zero;
+        visualRoot.transform.localRotation = Quaternion.identity;
+        visualRoot.transform.localScale = Vector3.one * ModConstants.HeadDropPouchScale;
+
+        GameObject pouchInstance = UnityEngine.Object.Instantiate(pouchPrefab, visualRoot.transform);
+        pouchInstance.name = "FF_HeadPouchVisual";
+        pouchInstance.transform.localPosition = Vector3.zero;
+        pouchInstance.transform.localRotation = Quaternion.identity;
+        pouchInstance.transform.localScale = Vector3.one;
+
+        StripLodHelpers(pouchInstance);
+        DisableVisualColliders(pouchInstance);
+        // Do not AlignDropVisualToGround for the pouch — it can bury the mesh under the terrain.
+        DisableVanillaDropRenderers(dropPrefab);
+        EnsurePouchDropPhysics(dropPrefab);
+
+        FletchersForgePlugin.Log?.LogInfo(
+            $"Applied leather pouch drop visual (scale {ModConstants.HeadDropPouchScale:0.##}) for {dropPrefab.name}.");
+        return true;
+    }
+
+    internal static void ApplyQuiverDropVisual(CustomItem item)
+    {
+        if (item?.ItemDrop == null)
+        {
+            return;
+        }
+
+        GameObject dropPrefab = item.ItemDrop.gameObject;
+        GameObject quiverPrefab = AssetBundleLoader.QuiverPrefab;
+        if (quiverPrefab == null)
+        {
+            FletchersForgePlugin.Log?.LogWarning("FF_Quiver bundle prefab missing; keeping deer hide drop mesh.");
+            return;
+        }
+
+        RemoveDropVisual(dropPrefab);
+
+        GameObject visualRoot = new GameObject("FF_DropVisual");
+        visualRoot.transform.SetParent(dropPrefab.transform, false);
+        visualRoot.transform.localPosition = Vector3.zero;
+        visualRoot.transform.localRotation = Quaternion.identity;
+        visualRoot.transform.localScale = Vector3.one * ModConstants.QuiverDropScale;
+
+        GameObject quiverInstance = UnityEngine.Object.Instantiate(quiverPrefab, visualRoot.transform);
+        quiverInstance.name = "FF_QuiverVisual";
+        quiverInstance.transform.localPosition = Vector3.zero;
+        quiverInstance.transform.localRotation = Quaternion.identity;
+        quiverInstance.transform.localScale = Vector3.one;
+
+        CustomVisualUtility.PrepareBundledInstance(quiverInstance);
+        CustomVisualUtility.ApplyMaterialsFromSource(quiverInstance, AssetBundleLoader.HeadPouchPrefab);
+        DisableVanillaDropRenderers(dropPrefab);
+        EnsurePouchDropPhysics(dropPrefab);
+        FletchersForgePlugin.Log?.LogInfo(
+            $"Applied quiver drop visual (scale {ModConstants.QuiverDropScale:0.##}) for {dropPrefab.name}.");
+    }
+
+    private static void StripLodHelpers(GameObject pouchRoot)
+    {
+        LODGroup lodGroup = pouchRoot.GetComponent<LODGroup>();
+        if (lodGroup != null)
+        {
+            UnityEngine.Object.Destroy(lodGroup);
+        }
+
+        var toDestroy = new System.Collections.Generic.List<GameObject>();
+        foreach (Transform child in pouchRoot.GetComponentsInChildren<Transform>(true))
+        {
+            if (child == null || child == pouchRoot.transform)
+            {
+                continue;
+            }
+
+            string name = child.name;
+            if (name.IndexOf("LOD1", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("LOD2", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("LOD3", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                toDestroy.Add(child.gameObject);
+            }
+        }
+
+        foreach (GameObject go in toDestroy)
+        {
+            UnityEngine.Object.Destroy(go);
+        }
+    }
+
+    private static void DisableVisualColliders(GameObject visualRoot)
+    {
+        foreach (Collider collider in visualRoot.GetComponentsInChildren<Collider>(true))
+        {
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+        }
+    }
+
+    private static void EnsurePouchDropPhysics(GameObject dropPrefab)
+    {
+        // Spheres roll forever on Valheim terrain; use a box so the pouch settles like scrap/ore.
+        foreach (Collider collider in dropPrefab.GetComponentsInChildren<Collider>(true))
+        {
+            // Keep only root colliders we control; visual colliders are already disabled.
+            if (collider.transform != dropPrefab.transform)
+            {
+                collider.enabled = false;
+            }
+        }
+
+        SphereCollider sphere = dropPrefab.GetComponent<SphereCollider>();
+        if (sphere != null)
+        {
+            UnityEngine.Object.Destroy(sphere);
+        }
+
+        BoxCollider box = dropPrefab.GetComponent<BoxCollider>();
+        if (box == null)
+        {
+            box = dropPrefab.AddComponent<BoxCollider>();
+        }
+
+        float size = ModConstants.HeadDropPouchColliderRadius * ModConstants.HeadDropPouchScale * 2f;
+        box.enabled = true;
+        box.isTrigger = false;
+        box.size = new Vector3(size, size * 0.85f, size);
+        box.center = new Vector3(0f, box.size.y * 0.5f, 0f);
+
+        Rigidbody rigidbody = dropPrefab.GetComponent<Rigidbody>();
+        if (rigidbody == null)
+        {
+            rigidbody = dropPrefab.AddComponent<Rigidbody>();
+        }
+
+        rigidbody.isKinematic = false;
+        rigidbody.useGravity = true;
+        rigidbody.mass = 2f;
+        rigidbody.linearDamping = 1.5f;
+        rigidbody.angularDamping = 8f;
+        rigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        // Stop endless tumble; allow a short slide then settle.
+        rigidbody.constraints = RigidbodyConstraints.FreezeRotation;
     }
 
     internal static void ApplyShaftDropVisual(CustomItem item, string sourceArrow, bool ashTint = false)

@@ -78,13 +78,8 @@ if ($Package) {
         Write-Warning "thunderstore\icon.png is missing. Add a 256x256 PNG before uploading."
     }
 
-    $iconsSource = Join-Path $thunderstore "Icons"
-    if (Test-Path $iconsSource) {
-        Copy-Item $iconsSource (Join-Path $thunderstoreStaging "Icons") -Recurse -Force
-    }
-    else {
-        Write-Warning "thunderstore\Icons is missing. README gallery images will not display on Thunderstore."
-    }
+    # Do not ship thunderstore/Icons/ in the player package — gallery images use GitHub raw URLs.
+    # Loose PNGs in the plugin folder confuse installs and can override art if overrides are enabled.
 
     if (Test-Path $packagePath) {
         Remove-Item $packagePath -Force

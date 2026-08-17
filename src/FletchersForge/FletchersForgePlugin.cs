@@ -51,6 +51,7 @@ public sealed class FletchersForgePlugin : BaseUnityPlugin
 
     private static void OnVanillaPrefabsAvailable()
     {
+        AssetBundleLoader.EnsureLoaded();
         ItemRegistrar.RegisterAll();
         RecipeRegistrar.RegisterAll();
         PrefabManager.OnVanillaPrefabsAvailable -= OnVanillaPrefabsAvailable;
@@ -58,7 +59,8 @@ public sealed class FletchersForgePlugin : BaseUnityPlugin
 
     private static void OnItemsRegisteredFejd()
     {
-        ItemRegistrar.ApplyDeferredIcons();
+        // Fejd/ObjectDB copy runs before ZDOMan is ready for cloned item prefabs.
+        ItemRegistrar.ApplyEmbeddedHeadIconsOnly();
     }
 
     private static void OnItemsRegisteredWorld()

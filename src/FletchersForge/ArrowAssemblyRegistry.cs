@@ -63,18 +63,49 @@ internal static class ArrowAssemblyRegistry
         return false;
     }
 
-    internal static bool IsArrowPrefab(string prefabName) => ArrowToParts.ContainsKey(prefabName);
+    internal static string NormalizePrefabName(string prefabName)
+    {
+        if (string.IsNullOrEmpty(prefabName))
+        {
+            return string.Empty;
+        }
 
-    internal static bool IsShaftPrefab(string prefabName) =>
-        prefabName == ModConstants.ShaftStandard ||
-        prefabName == ModConstants.ShaftNeedle ||
-        prefabName == ModConstants.ShaftAsh;
+        const string cloneSuffix = "(Clone)";
+        if (prefabName.EndsWith(cloneSuffix, StringComparison.Ordinal))
+        {
+            return prefabName.Substring(0, prefabName.Length - cloneSuffix.Length).Trim();
+        }
+
+        return prefabName;
+    }
+
+    internal static bool IsArrowPrefab(string prefabName) =>
+        ArrowToParts.ContainsKey(NormalizePrefabName(prefabName));
+
+    internal static bool IsShaftPrefab(string prefabName)
+    {
+        string name = NormalizePrefabName(prefabName);
+        return name == ModConstants.ShaftStandard ||
+               name == ModConstants.ShaftNeedle ||
+               name == ModConstants.ShaftAsh;
+    }
 
     internal static bool IsHeadPrefab(string prefabName) =>
-        prefabName.StartsWith("FF_Head", StringComparison.Ordinal);
+        NormalizePrefabName(prefabName).StartsWith("FF_Head", StringComparison.Ordinal);
 
     internal static bool IsKnifePrefab(string prefabName) =>
-        prefabName == ModConstants.FletchersKnife;
+        NormalizePrefabName(prefabName) == ModConstants.FletchersKnife;
+
+    internal static bool IsQuiverPrefab(string prefabName) =>
+        NormalizePrefabName(prefabName) == ModConstants.Quiver;
+
+    internal static bool IsQuiverStorageItem(string prefabName)
+    {
+        return IsKnifePrefab(prefabName) ||
+               IsHeadPrefab(prefabName) ||
+               IsShaftPrefab(prefabName) ||
+               IsArrowPrefab(prefabName);
+    }
 
     private static string Key(string shaft, string head) => $"{shaft}|{head ?? string.Empty}";
 }

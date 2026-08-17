@@ -29,6 +29,9 @@ internal static class LocalizationRegistrar
         loc.AddTranslation("English", "FF_HeadNeedle", "Needle arrowhead");
         loc.AddTranslation("English", "FF_HeadCarapace", "Carapace arrowhead");
         loc.AddTranslation("English", "FF_HeadCharred", "Charred arrowhead");
+        loc.AddTranslation("English", "FF_Quiver", "Fletcher's quiver");
+        loc.AddTranslation("English", "FF_Quiver_desc",
+            "Keep this on you to use eight fletcher slots. Open inventory to drag items in under the backpack. Hold ~ to free the mouse and click a HUD slot, or hold [ with 1–8.");
         loc.AddTranslation("English", "FF_FletchContainer", "Fletcher's bench");
         loc.AddTranslation("English", "FF_Reforge", "Reforge");
         loc.AddTranslation("English", "FF_Split", "Split");

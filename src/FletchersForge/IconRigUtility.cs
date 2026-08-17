@@ -197,9 +197,18 @@ internal static class IconRigUtility
             return null;
         }
 
-        GameObject rig = UnityEngine.Object.Instantiate(prefab);
-        rig.name = $"IconRig_Shaft_{sourceArrow}";
-        PrepareIconRig(rig);
+        GameObject rig;
+        IconRigGuard.Enter();
+        try
+        {
+            rig = UnityEngine.Object.Instantiate(prefab);
+            rig.name = $"IconRig_Shaft_{sourceArrow}";
+            PrepareIconRig(rig);
+        }
+        finally
+        {
+            IconRigGuard.Leave();
+        }
 
         foreach (Transform child in rig.GetComponentsInChildren<Transform>(true))
         {
@@ -230,9 +239,18 @@ internal static class IconRigUtility
             return null;
         }
 
-        GameObject rig = UnityEngine.Object.Instantiate(prefab);
-        rig.name = $"IconRig_Head_{sourceArrow}";
-        PrepareIconRig(rig);
+        GameObject rig;
+        IconRigGuard.Enter();
+        try
+        {
+            rig = UnityEngine.Object.Instantiate(prefab);
+            rig.name = $"IconRig_Head_{sourceArrow}";
+            PrepareIconRig(rig);
+        }
+        finally
+        {
+            IconRigGuard.Leave();
+        }
 
         foreach (Transform child in rig.GetComponentsInChildren<Transform>(true))
         {

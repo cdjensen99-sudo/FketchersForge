@@ -4,9 +4,27 @@ internal static class ModConstants
 {
     public const string ModGuid = "hardwire99.fletchersforge";
     public const string ModName = "Fletchers Forge";
-    public const string ModVersion = "0.1.32";
+    public const string ModVersion = "0.2.0";
 
-    /// Square ship cargo crate first; karve "chest" is the wooden chest piece (fallback only).
+    public const string AssetBundleName = "fletchersforge";
+    public const string HeadPouchPrefabName = "FF_HeadPouch";
+    public const string KnifeVisualPrefabName = "FF_FletchersKnife";
+    public const string QuiverPrefabName = "FF_Quiver";
+    /// Extra scale vs the vanilla attach/mesh. Icon uses the same mesh.
+    public const float KnifeVisualMeshScale = 0.85f;
+    /// Slide grip from handle-bounds center toward the pommel (0.5 = pommel end).
+    public const float KnifeVisualHandleShift = 0.4f;
+    /// Minimum world-drop box so a thin dagger still hits terrain.
+    public const float KnifeDropColliderMinSize = 0.1f;
+    public const float KnifeVisualLocalEulerX = 0f;
+    public const float KnifeVisualLocalEulerY = 0f;
+    public const float KnifeVisualLocalEulerZ = 0f;
+    public const string KnifeVisualMaterialTemplate = "KnifeCopper";
+    /// Scale for the leather pouch world-drop visual.
+    public const float HeadDropPouchScale = 2.5f;
+    public const float HeadDropPouchColliderRadius = 0.22f;
+
+    /// Fallback when the pouch AssetBundle is missing — square ship cargo crate.
     public const string HeadDropBoxPrimaryPrefab = "CargoCrate";
     public static readonly string[] HeadDropBoxPrefabFallbacks =
     {
@@ -16,6 +34,7 @@ internal static class ModConstants
     public const float HeadDropBoxScale = 0.25f;
 
     public const string FletchersKnife = "FF_FletchersKnife";
+    public const string Quiver = "FF_Quiver";
     public const string FletchContainer = "FF_FletchContainer";
 
     internal static readonly int LegacyContainerPrefabHash = FletchContainer.GetStableHashCode();
@@ -39,6 +58,10 @@ internal static class ModConstants
     public const float ShaftWeight = 0.05f;
     public const float HeadWeight = 0.05f;
     public const float KnifeWeight = 0.25f;
+    public const float QuiverWeight = 1f;
+    public const float QuiverDropScale = 1.375f;
+    public const int QuiverSlotCount = 8;
+    public const string QuiverSaveKey = "FF_QuiverInventory";
 
     public const int ShaftStackSize = 100;
     public const int HeadStackSize = 200;

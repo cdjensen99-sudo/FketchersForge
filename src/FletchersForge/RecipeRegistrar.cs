@@ -48,6 +48,7 @@ internal static class RecipeRegistrar
         RegisterHeadRecipe(ModConstants.HeadCharred, CraftingStations.BlackForge, 3, new RequirementConfig("CharredBone", 4));
 
         RegisterKnifeRecipe();
+        RegisterQuiverRecipe();
     }
 
     private static void RegisterShaftRecipe(string item, int minLevel, params RequirementConfig[] requirements)
@@ -94,6 +95,26 @@ internal static class RecipeRegistrar
                 new RequirementConfig("FineWood", 1),
                 new RequirementConfig("Copper", 1),
                 new RequirementConfig("LeatherScraps", 1),
+            },
+        };
+
+        ItemManager.Instance.AddRecipe(new CustomRecipe(config));
+    }
+
+    private static void RegisterQuiverRecipe()
+    {
+        var config = new RecipeConfig
+        {
+            Name = "Recipe_FF_Quiver",
+            Item = ModConstants.Quiver,
+            Amount = 1,
+            CraftingStation = CraftingStations.Forge,
+            MinStationLevel = 1,
+            Requirements = new[]
+            {
+                new RequirementConfig("DeerHide", 4),
+                new RequirementConfig("Bronze", 2),
+                new RequirementConfig("FineWood", 4),
             },
         };
 

@@ -4,6 +4,11 @@ namespace FletchersForge;
 
 internal sealed class FletchUiBehaviour : MonoBehaviour
 {
+    private void Update()
+    {
+        QuiverHud.Update();
+    }
+
     private void OnGUI()
     {
         FletchUiService.DrawBenchOverlay();
