@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.5
+
+- **Quiver unload** — stacks can be dragged back out of the quiver into the backpack. Vanilla was cancelling any drag that did not start in the backpack unless a chest was open.
+- **HUD dump** — with inventory closed, hold `~` and right-click (or Shift/Ctrl-click) a quiver slot to send that stack to your inventory. Open-inventory **Ctrl-click** does the same.
+
 ## 0.2.4
 
 - **Quiver and knife** — fixed issues with the Fletcher's knife and quiver.

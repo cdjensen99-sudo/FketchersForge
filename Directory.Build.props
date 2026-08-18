@@ -5,7 +5,7 @@
     <BepInExCore>$(BepInExPath)\core</BepInExCore>
     <ValheimManaged>$(ValheimPath)\valheim_Data\Managed</ValheimManaged>
     <JotunnPath Condition="'$(JotunnPath)' == ''">$(USERPROFILE)\AppData\Roaming\r2modmanPlus-local\Valheim\profiles\Testing\BepInEx\plugins\ValheimModding-Jotunn\Jotunn.dll</JotunnPath>
-    <ModVersion>0.2.4</ModVersion>
+    <ModVersion>0.2.5</ModVersion>
     <R2ModManProfile>Testing</R2ModManProfile>
     <ModDeployDir>$(USERPROFILE)\AppData\Roaming\r2modmanPlus-local\Valheim\profiles\$(R2ModManProfile)\BepInEx\plugins\Hardwire99-FletchersForge</ModDeployDir>
   </PropertyGroup>

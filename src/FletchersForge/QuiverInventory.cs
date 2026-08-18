@@ -218,6 +218,51 @@ internal static class QuiverInventory
         }
     }
 
+    internal static bool TryMoveToPlayer(Player player, ItemDrop.ItemData item)
+    {
+        if (player == null || item == null || !Contains(item))
+        {
+            return false;
+        }
+
+        UnequipIfUsing(player, item);
+        Inventory destination = player.GetInventory();
+        if (destination == null || !destination.CanAddItem(item))
+        {
+            player.Message(MessageHud.MessageType.Center, "$hud_inventoryfull");
+            return false;
+        }
+
+        destination.MoveItemToThis(inventory, item);
+        SaveBound();
+        return true;
+    }
+
+    internal static bool TryMoveSlotToPlayer(Player player, int slot)
+    {
+        if (player == null || slot < 0 || slot >= ModConstants.QuiverSlotCount)
+        {
+            return false;
+        }
+
+        SyncFromPlayer(player);
+        return TryMoveToPlayer(player, inventory.GetItemAt(slot, 0));
+    }
+
+    internal static void UnequipIfUsing(Player player, ItemDrop.ItemData item)
+    {
+        if (player == null || item == null)
+        {
+            return;
+        }
+
+        if (player.GetAmmoItem() == item || item.m_equipped)
+        {
+            player.UnequipItem(item, triggerEquipEffects: false);
+            item.m_equipped = false;
+        }
+    }
+
     internal static void ConsumeArrow(ItemDrop.ItemData arrow, int amount)
     {
         if (inventory == null || arrow == null)

@@ -1,6 +1,6 @@
 {
   "name": "FletchersForge",
-  "version_number": "0.2.4",
+  "version_number": "0.2.5",
   "website_url": "https://github.com/cdjensen99-sudo/FketchersForge",
   "description": "Craft arrow shafts and heads, reforge in the field with the Fletcher's knife, and carry ammo in a custom quiver.",
   "dependencies": [

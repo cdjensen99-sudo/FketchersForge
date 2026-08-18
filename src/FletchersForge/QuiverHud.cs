@@ -640,11 +640,24 @@ internal static class QuiverHud
             InventoryGui current = InventoryGui.instance;
             if (activateWhenClosed && !InventoryGui.IsVisible())
             {
-                if (Player.m_localPlayer != null)
+                if (Player.m_localPlayer == null)
                 {
-                    QuiverInventory.ActivateSlot(Player.m_localPlayer, pos.x);
+                    return;
                 }
 
+                if (mod == InventoryGrid.Modifier.Move || mod == InventoryGrid.Modifier.Split)
+                {
+                    QuiverInventory.TryMoveSlotToPlayer(Player.m_localPlayer, pos.x);
+                    return;
+                }
+
+                QuiverInventory.ActivateSlot(Player.m_localPlayer, pos.x);
+                return;
+            }
+
+            if (mod == InventoryGrid.Modifier.Move && item != null)
+            {
+                QuiverInventory.TryMoveToPlayer(Player.m_localPlayer, item);
                 return;
             }
 
@@ -652,6 +665,12 @@ internal static class QuiverHud
         };
         grid.m_onRightClick += (InventoryGrid selectedGrid, ItemDrop.ItemData item, Vector2i pos) =>
         {
+            if (activateWhenClosed && !InventoryGui.IsVisible())
+            {
+                QuiverInventory.TryMoveSlotToPlayer(Player.m_localPlayer, pos.x);
+                return;
+            }
+
             OnRightClickItemMethod?.Invoke(InventoryGui.instance, new object[] { selectedGrid, item, pos });
         };
     }

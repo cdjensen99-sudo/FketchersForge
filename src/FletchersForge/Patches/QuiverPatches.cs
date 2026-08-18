@@ -89,6 +89,41 @@ internal static class InventoryGuiUpdateQuiverDockPatch
     }
 }
 
+/// Vanilla cancels any drag whose source is not the player inventory unless a chest is open.
+/// Quiver stacks live in a separate Inventory, so pickup was cleared the same frame.
+[HarmonyPatch(typeof(InventoryGui), "UpdateContainer")]
+internal static class InventoryGuiUpdateContainerQuiverPatch
+{
+    [HarmonyPrefix]
+    private static void Prefix(InventoryGui __instance, out Inventory __state)
+    {
+        __state = null;
+        Container container = Traverse.Create(__instance).Field<Container>("m_currentContainer").Value;
+        if (container != null && container.IsOwner())
+        {
+            return;
+        }
+
+        Inventory dragInventory = Traverse.Create(__instance).Field<Inventory>("m_dragInventory").Value;
+        if (!QuiverInventory.Is(dragInventory) || Player.m_localPlayer == null)
+        {
+            return;
+        }
+
+        __state = dragInventory;
+        Traverse.Create(__instance).Field("m_dragInventory").SetValue(Player.m_localPlayer.GetInventory());
+    }
+
+    [HarmonyPostfix]
+    private static void Postfix(InventoryGui __instance, Inventory __state)
+    {
+        if (__state != null)
+        {
+            Traverse.Create(__instance).Field("m_dragInventory").SetValue(__state);
+        }
+    }
+}
+
 [HarmonyPatch(typeof(Inventory), nameof(Inventory.GetTotalWeight))]
 internal static class InventoryWeightQuiverPatch
 {

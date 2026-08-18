@@ -2,7 +2,7 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 0.2.4  
+**Current version:** 0.2.5  
 **Requires:** BepInEx + Jötunn
 
 **Links**
@@ -45,7 +45,7 @@ This release adds custom 3D models:
 3. Craft a **Fletcher's knife** at the **Forge** (level 1).
 4. Hold the knife in your **hand** — the **Fletcher's bench** opens automatically.
 5. Use **Reforge** or **Split**. Results go **directly into your inventory**.
-6. Craft a **Fletcher's quiver**, keep it in your inventory, and drag arrows into its eight slots.
+6. Craft a **Fletcher's quiver**, keep it in your inventory, and drag arrows into its eight slots (and back out the same way).
 
 ---
 
@@ -73,7 +73,7 @@ Craft a **Fletcher's quiver** and keep it in your inventory. It is not worn; hav
 
 ### Loading the slots
 
-Open your **inventory**. The eight quiver slots sit **under the backpack**. Drag arrows (or other accepted items) in and out like any other inventory.
+Open your **inventory**. The eight quiver slots sit **under the backpack**. Drag arrows (or other accepted items) in and out like any other inventory. **Ctrl-click** a quiver slot to send that stack straight to the backpack.
 
 ### Choosing ammo
 
@@ -88,6 +88,7 @@ The bow shoots from the **selected** quiver slot.
 |-----|---------|
 | Hold **[+1** … **[+8** | Hold **[** and press **1**–**8** |
 | Click a HUD slot | Hold **~** (the key left of 1) to free the mouse, then click |
+| Unload a HUD slot | Hold **~**, then **right-click** (or Shift/Ctrl-click) to dump that stack into the backpack |
 
 Selecting a slot that holds the **Fletcher's knife** equips the knife.
 
