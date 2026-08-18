@@ -5,10 +5,14 @@ namespace FletchersForge;
 internal static class FletchersKnifeHelper
 {
     private static readonly MethodInfo GetRightItemMethod =
-        typeof(Humanoid).GetMethod("GetRightItem", BindingFlags.Instance | BindingFlags.NonPublic);
+        typeof(Humanoid).GetMethod(
+            "GetRightItem",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
     private static readonly MethodInfo GetLeftItemMethod =
-        typeof(Humanoid).GetMethod("GetLeftItem", BindingFlags.Instance | BindingFlags.NonPublic);
+        typeof(Humanoid).GetMethod(
+            "GetLeftItem",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
     internal static bool IsKnifeInHand(Player player)
     {

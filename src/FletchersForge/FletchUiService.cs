@@ -51,21 +51,17 @@ internal static class FletchUiService
         InventoryGui gui = InventoryGui.instance;
         FletchBenchInventory.ClearSlots();
 
-        if (InventoryGui.IsVisible())
+        if (!InventoryGui.IsVisible())
         {
-            gui.Hide();
+            gui.Show(null);
         }
 
-        InventoryGuiAccess.SetHiddenFrames(gui, 10);
-        InventoryGuiAccess.SetAnimatorVisible(gui, true);
+        InventoryGuiAccess.SetHiddenFrames(gui, 0);
         InventoryGuiAccess.SetActiveGroup(gui, 1, playSound: false);
         InventoryGuiAccess.SetFirstContainerUpdate(gui, true);
 
         benchUiOpen = true;
-        if (InventoryGui.instance != null)
-        {
-            FletchBenchButtonUi.Update(InventoryGui.instance, true);
-        }
+        FletchBenchButtonUi.Update(gui, true);
 
         FletchersForgePlugin.Log?.LogInfo("Opened virtual Fletcher bench UI.");
     }
@@ -74,6 +70,7 @@ internal static class FletchUiService
     {
         benchUiOpen = false;
         FletchBenchInventory.ClearSlots();
+        QuiverHud.RestoreBenchContainerPosition();
     }
 
     internal static void Close()
@@ -85,6 +82,7 @@ internal static class FletchUiService
 
         benchUiOpen = false;
         FletchBenchInventory.ClearSlots();
+        QuiverHud.RestoreBenchContainerPosition();
 
         if (InventoryGui.instance != null && InventoryGui.IsVisible())
         {

@@ -28,6 +28,9 @@ internal static class QuiverHud
     private static Image invBkg;
     private static bool updateErrorLogged;
     private static bool hudDragging;
+    private static Vector2 containerBaseAnchored;
+    private static bool containerPosSaved;
+    private static RectTransform movedContainer;
 
     internal static RectTransform HudRootRect => hudRoot != null ? hudRoot.transform as RectTransform : null;
 
@@ -109,6 +112,7 @@ internal static class QuiverHud
         if (!InventoryGui.IsVisible())
         {
             SetActive(invRoot, false);
+            RestoreBenchContainerPosition();
             return;
         }
 
@@ -116,6 +120,7 @@ internal static class QuiverHud
         if (player == null || !player.IsOwner() || player.IsDead() || !QuiverInventory.PlayerHasQuiver(player))
         {
             SetActive(invRoot, false);
+            RestoreBenchContainerPosition();
             return;
         }
 
@@ -127,6 +132,15 @@ internal static class QuiverHud
         PlaceInventoryRow(InventoryGui.instance.m_playerGrid);
         SetActive(invRoot, true);
         UpdateGrid(invGrid, player);
+        if (FletchUiService.IsBenchUiOpen)
+        {
+            OffsetBenchBelowQuiver();
+            invRoot.transform.SetAsLastSibling();
+        }
+        else
+        {
+            RestoreBenchContainerPosition();
+        }
     }
 
     internal static void CancelPlayerCombatInput(Player player)
@@ -340,6 +354,52 @@ internal static class QuiverHud
         invRect.position = corners[0] + slot.TransformVector(new Vector3(0f, -space * 0.25f, 0f));
         PlaceInventoryBackground(invRect, space);
         return true;
+    }
+
+    internal static void RestoreBenchContainerPosition()
+    {
+        if (!containerPosSaved || movedContainer == null)
+        {
+            return;
+        }
+
+        movedContainer.anchoredPosition = containerBaseAnchored;
+        containerPosSaved = false;
+        movedContainer = null;
+    }
+
+    private static void OffsetBenchBelowQuiver()
+    {
+        RectTransform container = InventoryGui.instance?.m_container;
+        RectTransform quiver = invBkg != null ? invBkg.rectTransform : invRoot?.transform as RectTransform;
+        if (container == null || quiver == null || container.parent == null)
+        {
+            return;
+        }
+
+        if (!containerPosSaved || movedContainer != container)
+        {
+            containerBaseAnchored = container.anchoredPosition;
+            movedContainer = container;
+            containerPosSaved = true;
+        }
+
+        container.anchoredPosition = containerBaseAnchored;
+
+        Vector3[] quiverCorners = new Vector3[4];
+        Vector3[] containerCorners = new Vector3[4];
+        quiver.GetWorldCorners(quiverCorners);
+        container.GetWorldCorners(containerCorners);
+
+        float gap = Mathf.Abs(quiver.rect.height) * 0.15f;
+        float worldDeltaY = (quiverCorners[0].y - gap) - containerCorners[1].y;
+        if (worldDeltaY >= -0.5f)
+        {
+            return;
+        }
+
+        Vector3 local = container.parent.InverseTransformVector(new Vector3(0f, worldDeltaY, 0f));
+        container.anchoredPosition = containerBaseAnchored + new Vector2(0f, local.y);
     }
 
     private static void PlaceInventoryBackground(RectTransform invRect, float space)

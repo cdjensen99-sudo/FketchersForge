@@ -46,8 +46,23 @@ internal static class ItemRegistrar
         RegisterHead(ModConstants.HeadCarapace, "$FF_HeadCarapace", "ArrowCarapace");
         RegisterHead(ModConstants.HeadCharred, "$FF_HeadCharred", "ArrowCharred");
 
-        RegisterKnife();
-        RegisterQuiver();
+        try
+        {
+            RegisterKnife();
+        }
+        catch (System.Exception ex)
+        {
+            FletchersForgePlugin.Log?.LogError($"Failed to register Fletcher's knife: {ex}");
+        }
+
+        try
+        {
+            RegisterQuiver();
+        }
+        catch (System.Exception ex)
+        {
+            FletchersForgePlugin.Log?.LogError($"Failed to register Fletcher's quiver: {ex}");
+        }
     }
 
     internal static void ApplyEmbeddedHeadIconsOnly()
@@ -186,6 +201,14 @@ internal static class ItemRegistrar
         };
 
         knifeItem = new CustomItem(ModConstants.FletchersKnife, "KnifeBlackMetal", config);
+        if (knifeItem?.ItemDrop?.m_itemData?.m_shared == null)
+        {
+            FletchersForgePlugin.Log?.LogError(
+                "Failed to clone Fletcher's knife (prefab name already in use). Knife item was not registered.");
+            knifeItem = null;
+            return;
+        }
+
         FletchersKnifeConfigurator.Configure(knifeItem.ItemDrop.m_itemData.m_shared);
         ApplyKnifeVisuals(knifeItem.ItemDrop.gameObject);
         ItemManager.Instance.AddItem(knifeItem);
@@ -201,6 +224,14 @@ internal static class ItemRegistrar
         };
 
         quiverItem = new CustomItem(ModConstants.Quiver, "DeerHide", config);
+        if (quiverItem?.ItemDrop?.m_itemData?.m_shared == null)
+        {
+            FletchersForgePlugin.Log?.LogError(
+                "Failed to clone Fletcher's quiver (prefab name already in use). Quiver item was not registered.");
+            quiverItem = null;
+            return;
+        }
+
         ApplyMaterialStats(quiverItem, ModConstants.QuiverWeight, 1);
         ComponentDropVisualUtility.ApplyQuiverDropVisual(quiverItem);
         ItemManager.Instance.AddItem(quiverItem);
@@ -209,7 +240,7 @@ internal static class ItemRegistrar
 
     private static void ApplyDeferredRenderedIcon(CustomItem item, string rigName)
     {
-        if (item == null)
+        if (item?.ItemDrop == null)
         {
             return;
         }
