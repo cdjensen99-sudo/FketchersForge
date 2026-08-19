@@ -3,9 +3,11 @@ using UnityEngine.EventSystems;
 
 namespace FletchersForge;
 
-/// Drag the left grip on the closed-inventory quiver bar to reposition it.
+/// Drag the left grip on the quiver HUD or open-inventory row to reposition it.
 internal sealed class QuiverHudMover : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
+    internal bool ForInventory;
+
     private RectTransform target;
     private RectTransform parentRect;
     private Vector2 grabOffset;
@@ -25,7 +27,16 @@ internal sealed class QuiverHudMover : MonoBehaviour, IBeginDragHandler, IDragHa
         }
 
         dragging = true;
-        QuiverHud.BeginHudDrag();
+        parentRect = target.parent as RectTransform;
+        if (ForInventory)
+        {
+            QuiverHud.BeginInvDrag();
+        }
+        else
+        {
+            QuiverHud.BeginHudDrag();
+        }
+
         Camera camera = eventData.pressEventCamera;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             parentRect != null ? parentRect : target,
@@ -59,12 +70,28 @@ internal sealed class QuiverHudMover : MonoBehaviour, IBeginDragHandler, IDragHa
         }
 
         dragging = false;
-        QuiverHud.SaveHudPosition(target.anchoredPosition);
+        if (ForInventory)
+        {
+            QuiverHud.SaveInvPosition(target.anchoredPosition);
+        }
+        else
+        {
+            QuiverHud.SaveHudPosition(target.anchoredPosition);
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (eventData.button == PointerEventData.InputButton.Right)
+        if (eventData.button != PointerEventData.InputButton.Right)
+        {
+            return;
+        }
+
+        if (ForInventory)
+        {
+            QuiverHud.ResetInvPosition();
+        }
+        else
         {
             QuiverHud.ResetHudPosition();
         }

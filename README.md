@@ -2,12 +2,26 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 0.2.5  
+**Current version:** 0.2.6  
 **Requires:** BepInEx + Jötunn
 
 **Links**
 - **[Team Extreme Discord](https://discord.gg/cCNG8xKXMn)** — setup help, bug reports, and updates
 - **[GitHub — Fletchers Forge](https://github.com/cdjensen99-sudo/FketchersForge)** — source code and issues
+
+---
+
+## Screenshots
+
+![Fletcher's knife and quiver in inventory](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/Images/FF-Items.png)
+
+![Arrowhead bag world drop](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/Images/FF-Arrowheadbag.png)
+
+![Quiver slots while inventory is open](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/Images/FF-Quiver.png)
+
+![Quiver HUD while inventory is closed (left grip to move)](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/Images/FF-QuiverHotbar.png)
+
+![Fletcher's bench](https://raw.githubusercontent.com/cdjensen99-sudo/FketchersForge/main/Images/FF-FletchersBench.png)
 
 ---
 
@@ -100,6 +114,10 @@ The closed-inventory quiver bar can be moved.
 2. Drag the **left grip** (the small handle on the left of the bar) to a new spot. The position is saved.
 3. **Right-click** that grip (still holding **~**) to put the bar back in the default place.
 
+### Moving the inventory row
+
+While inventory is open, the quiver row starts under the backpack. Drag the **left grip** to move it (clicking a slot still moves items). That spot is saved until you drag it again. **Right-click** the grip to put it back under the backpack.
+
 ---
 
 ## Arrow components
@@ -191,7 +209,7 @@ Restart Valheim (or reload the profile) after changing keys.
 
 There is **no key to open the bench** — it opens when the knife is **in your hand**.
 
-HUD position after you drag the bar is saved in the same Quiver section. Right-click the left grip while holding the cursor key to restore the default spot.
+HUD position after you drag the bar is saved in the same Quiver section. Right-click the left grip while holding the cursor key to restore the default spot. The open-inventory row has its own saved position after you drag its grip.
 
 ---
 

@@ -28,9 +28,7 @@ internal static class QuiverHud
     private static Image invBkg;
     private static bool updateErrorLogged;
     private static bool hudDragging;
-    private static Vector2 containerBaseAnchored;
-    private static bool containerPosSaved;
-    private static RectTransform movedContainer;
+    private static bool invDragging;
 
     internal static RectTransform HudRootRect => hudRoot != null ? hudRoot.transform as RectTransform : null;
 
@@ -112,7 +110,6 @@ internal static class QuiverHud
         if (!InventoryGui.IsVisible())
         {
             SetActive(invRoot, false);
-            RestoreBenchContainerPosition();
             return;
         }
 
@@ -120,7 +117,6 @@ internal static class QuiverHud
         if (player == null || !player.IsOwner() || player.IsDead() || !QuiverInventory.PlayerHasQuiver(player))
         {
             SetActive(invRoot, false);
-            RestoreBenchContainerPosition();
             return;
         }
 
@@ -132,15 +128,7 @@ internal static class QuiverHud
         PlaceInventoryRow(InventoryGui.instance.m_playerGrid);
         SetActive(invRoot, true);
         UpdateGrid(invGrid, player);
-        if (FletchUiService.IsBenchUiOpen)
-        {
-            OffsetBenchBelowQuiver();
-            invRoot.transform.SetAsLastSibling();
-        }
-        else
-        {
-            RestoreBenchContainerPosition();
-        }
+        invRoot.transform.SetAsLastSibling();
     }
 
     internal static void CancelPlayerCombatInput(Player player)
@@ -184,6 +172,29 @@ internal static class QuiverHud
         hudDragging = false;
         ModConfig.QuiverHudCustomPosition.Value = false;
         ApplyHudPosition();
+    }
+
+    internal static void BeginInvDrag()
+    {
+        invDragging = true;
+    }
+
+    internal static void SaveInvPosition(Vector2 anchoredPosition)
+    {
+        invDragging = false;
+        ModConfig.QuiverInvCustomPosition.Value = true;
+        ModConfig.QuiverInvPosX.Value = anchoredPosition.x;
+        ModConfig.QuiverInvPosY.Value = anchoredPosition.y;
+    }
+
+    internal static void ResetInvPosition()
+    {
+        invDragging = false;
+        ModConfig.QuiverInvCustomPosition.Value = false;
+        if (InventoryGui.instance?.m_playerGrid != null)
+        {
+            PlaceInventoryRow(InventoryGui.instance.m_playerGrid);
+        }
     }
 
     private static void UpdateGrid(InventoryGrid grid, Player player)
@@ -234,7 +245,7 @@ internal static class QuiverHud
         hudCanvas.overrideSorting = true;
         hudCanvas.sortingOrder = 300;
         hudRoot.AddComponent<GraphicRaycaster>();
-        AddMoveHandle(hudRoot.transform as RectTransform);
+        AddMoveHandle(hudRoot.transform as RectTransform, forInventory: false);
         BindGrid(hudGrid, activateWhenClosed: true);
         FletchersForgePlugin.Log?.LogInfo("Created Fletcher's quiver HUD slots.");
         return true;
@@ -263,6 +274,11 @@ internal static class QuiverHud
             playerGrid.m_elementPrefab,
             playerGrid.m_elementSpace,
             out invGrid);
+        Canvas invCanvas = invRoot.AddComponent<Canvas>();
+        invCanvas.overrideSorting = true;
+        invCanvas.sortingOrder = 250;
+        invRoot.AddComponent<GraphicRaycaster>();
+        AddMoveHandle(invRoot.transform as RectTransform, forInventory: true);
         PlaceInventoryRow(playerGrid);
         BindGrid(invGrid, activateWhenClosed: false);
         FletchersForgePlugin.Log?.LogInfo("Created Fletcher's quiver inventory slots.");
@@ -349,57 +365,30 @@ internal static class QuiverHud
         invRect.pivot = new Vector2(0f, 1f);
         invRect.sizeDelta = new Vector2(ModConstants.QuiverSlotCount * space, space);
 
-        Vector3[] corners = new Vector3[4];
-        slot.GetWorldCorners(corners);
-        invRect.position = corners[0] + slot.TransformVector(new Vector3(0f, -space * 0.25f, 0f));
+        if (!invDragging)
+        {
+            if (ModConfig.QuiverInvCustomPosition != null && ModConfig.QuiverInvCustomPosition.Value)
+            {
+                invRect.anchoredPosition = new Vector2(
+                    ModConfig.QuiverInvPosX.Value,
+                    ModConfig.QuiverInvPosY.Value);
+            }
+            else
+            {
+                Vector3[] corners = new Vector3[4];
+                slot.GetWorldCorners(corners);
+                invRect.position = corners[0] + slot.TransformVector(new Vector3(0f, -space * 0.25f, 0f));
+            }
+        }
+
         PlaceInventoryBackground(invRect, space);
+        Transform handle = invRoot.transform.Find("MoveHandle");
+        if (handle != null)
+        {
+            handle.SetAsLastSibling();
+        }
+
         return true;
-    }
-
-    internal static void RestoreBenchContainerPosition()
-    {
-        if (!containerPosSaved || movedContainer == null)
-        {
-            return;
-        }
-
-        movedContainer.anchoredPosition = containerBaseAnchored;
-        containerPosSaved = false;
-        movedContainer = null;
-    }
-
-    private static void OffsetBenchBelowQuiver()
-    {
-        RectTransform container = InventoryGui.instance?.m_container;
-        RectTransform quiver = invBkg != null ? invBkg.rectTransform : invRoot?.transform as RectTransform;
-        if (container == null || quiver == null || container.parent == null)
-        {
-            return;
-        }
-
-        if (!containerPosSaved || movedContainer != container)
-        {
-            containerBaseAnchored = container.anchoredPosition;
-            movedContainer = container;
-            containerPosSaved = true;
-        }
-
-        container.anchoredPosition = containerBaseAnchored;
-
-        Vector3[] quiverCorners = new Vector3[4];
-        Vector3[] containerCorners = new Vector3[4];
-        quiver.GetWorldCorners(quiverCorners);
-        container.GetWorldCorners(containerCorners);
-
-        float gap = Mathf.Abs(quiver.rect.height) * 0.15f;
-        float worldDeltaY = (quiverCorners[0].y - gap) - containerCorners[1].y;
-        if (worldDeltaY >= -0.5f)
-        {
-            return;
-        }
-
-        Vector3 local = container.parent.InverseTransformVector(new Vector3(0f, worldDeltaY, 0f));
-        container.anchoredPosition = containerBaseAnchored + new Vector2(0f, local.y);
     }
 
     private static void PlaceInventoryBackground(RectTransform invRect, float space)
@@ -608,10 +597,10 @@ internal static class QuiverHud
         return (-2f * slotHeight) + ModConfig.QuiverHudOffsetY.Value;
     }
 
-    private static void AddMoveHandle(RectTransform hudRect)
+    private static void AddMoveHandle(RectTransform rootRect, bool forInventory)
     {
         GameObject handle = new GameObject("MoveHandle", typeof(RectTransform), typeof(Image));
-        handle.transform.SetParent(hudRect, false);
+        handle.transform.SetParent(rootRect, false);
         RectTransform handleRect = handle.GetComponent<RectTransform>();
         handleRect.anchorMin = new Vector2(0f, 0f);
         handleRect.anchorMax = new Vector2(0f, 1f);
@@ -622,7 +611,8 @@ internal static class QuiverHud
         Image image = handle.GetComponent<Image>();
         image.color = new Color(0.15f, 0.12f, 0.1f, 0.65f);
         image.raycastTarget = true;
-        handle.AddComponent<QuiverHudMover>();
+        QuiverHudMover mover = handle.AddComponent<QuiverHudMover>();
+        mover.ForInventory = forInventory;
     }
 
     private static void BindGrid(InventoryGrid grid, bool activateWhenClosed)

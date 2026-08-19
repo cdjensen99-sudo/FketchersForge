@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.6
+
+- **Quiver row** — while inventory is open, drag the left grip to move the eight slots (clicking a slot still moves items). Right-click the grip to reset.
+- **Fletcher's knife** — unequipping the knife closes the bench; inventory stays open.
+- **Fletcher's bench** — compact panel at normal slot, button, and text size, with Reforge and Split at the bottom. Chest extras (weight tab, Reclaim all) stay hidden on the bench.
+- **Docs** — in-game screenshots of the arrowhead bag, knife, quiver, HUD, and bench.
+
 ## 0.2.5
 
 - **Quiver unload** — stacks can be dragged back out of the quiver into the backpack. Vanilla was cancelling any drag that did not start in the backpack unless a chest was open.

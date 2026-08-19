@@ -1,5 +1,7 @@
 using HarmonyLib;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FletchersForge.Patches;
 
@@ -61,7 +63,17 @@ internal static class InventoryGuiUpdateFletchPatch
             GameObject weightObject = Traverse.Create(containerWeight).Property<GameObject>("gameObject").Value;
             if (weightObject != null)
             {
-                weightObject.SetActive(!benchOpen && __instance.IsContainerOpen());
+                bool showWeight = !benchOpen && __instance.IsContainerOpen();
+                weightObject.SetActive(showWeight);
+                Transform tab = weightObject.transform.parent;
+                if (tab != null && tab != __instance.m_container)
+                {
+                    string tabName = tab.name.ToLowerInvariant();
+                    if (tabName.Contains("weight") || tabName.Contains("containerweight"))
+                    {
+                        tab.gameObject.SetActive(showWeight);
+                    }
+                }
             }
         }
 
@@ -70,25 +82,36 @@ internal static class InventoryGuiUpdateFletchPatch
             return;
         }
 
-        HideContainerActionButtons(__instance.m_container, benchOpen);
+        HideBenchExtraWidgets(__instance);
     }
 
-    private static void HideContainerActionButtons(RectTransform containerRoot, bool benchOpen)
+    private static void HideBenchExtraWidgets(InventoryGui gui)
     {
-        foreach (Transform child in containerRoot.GetComponentsInChildren<Transform>(true))
+        HideNamedExtras(gui, gui.m_container);
+        if (gui.m_container.parent != null)
         {
-            if (child == null)
+            HideNamedExtras(gui, gui.m_container.parent);
+        }
+    }
+
+    private static void HideNamedExtras(InventoryGui gui, Transform root)
+    {
+        if (root == null)
+        {
+            return;
+        }
+
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (child == null || IsProtectedBenchControl(gui, child))
             {
                 continue;
             }
 
             string name = child.name.ToLowerInvariant();
-            if (benchOpen && (name.Contains("takeall") || name.Contains("stackall")))
-            {
-                continue;
-            }
-
             if (name.Contains("reclaim") ||
+                name.Contains("containerweight") ||
+                (name.Contains("weight") && (gui.m_player == null || !child.IsChildOf(gui.m_player))) ||
                 name.Contains("takeall") ||
                 name.Contains("stackall") ||
                 name.Contains("place stacks") ||
@@ -100,6 +123,44 @@ internal static class InventoryGuiUpdateFletchPatch
                 child.gameObject.SetActive(false);
             }
         }
+
+        foreach (Button button in root.GetComponentsInChildren<Button>(true))
+        {
+            if (button == null || IsProtectedBenchControl(gui, button.transform))
+            {
+                continue;
+            }
+
+            TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+            string text = label != null ? label.text : string.Empty;
+            if (!string.IsNullOrEmpty(text) &&
+                text.IndexOf("reclaim", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                button.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private static bool IsProtectedBenchControl(InventoryGui gui, Transform child)
+    {
+        if (gui.m_player != null && (child == gui.m_player || child.IsChildOf(gui.m_player)))
+        {
+            return true;
+        }
+
+        if (gui.m_takeAllButton != null &&
+            (child == gui.m_takeAllButton.transform || child.IsChildOf(gui.m_takeAllButton.transform)))
+        {
+            return true;
+        }
+
+        if (gui.m_stackAllButton != null &&
+            (child == gui.m_stackAllButton.transform || child.IsChildOf(gui.m_stackAllButton.transform)))
+        {
+            return true;
+        }
+
+        return false;
     }
 }
 
@@ -204,6 +265,7 @@ internal static class InventoryGuiUpdateContainerFletchPatch
             InventoryGuiAccess.ResetContainerHold(__instance);
         }
 
+        FletchUiService.ApplyCompactBenchPanel(__instance);
         return false;
     }
 }

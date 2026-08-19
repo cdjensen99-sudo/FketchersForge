@@ -18,6 +18,9 @@ internal static class ModConfig
     internal static ConfigEntry<bool> QuiverHudCustomPosition;
     internal static ConfigEntry<float> QuiverHudPosX;
     internal static ConfigEntry<float> QuiverHudPosY;
+    internal static ConfigEntry<bool> QuiverInvCustomPosition;
+    internal static ConfigEntry<float> QuiverInvPosX;
+    internal static ConfigEntry<float> QuiverInvPosY;
 
     internal static void Bind(ConfigFile config)
     {
@@ -102,6 +105,24 @@ internal static class ModConfig
             "HudPosY",
             0f,
             "Saved HUD Y after dragging the left grip.");
+
+        QuiverInvCustomPosition = config.Bind(
+            "Quiver",
+            "InvCustomPosition",
+            false,
+            "True after you drag the open-inventory quiver row. Right-click the left grip to restore the default spot under the backpack.");
+
+        QuiverInvPosX = config.Bind(
+            "Quiver",
+            "InvPosX",
+            0f,
+            "Saved inventory-row X after dragging the left grip.");
+
+        QuiverInvPosY = config.Bind(
+            "Quiver",
+            "InvPosY",
+            0f,
+            "Saved inventory-row Y after dragging the left grip.");
     }
 
     internal static string FormatKey(KeyCode key)
