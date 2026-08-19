@@ -29,7 +29,6 @@ public sealed class FletchersForgePlugin : BaseUnityPlugin
 
         harmony = new Harmony(ModConstants.ModGuid);
         harmony.PatchAll(typeof(FletchersForgePlugin).Assembly);
-        ChestSnapHarmony.Apply(harmony);
 
         LocalizationRegistrar.Initialize();
         gameObject.AddComponent<FletchUiBehaviour>();

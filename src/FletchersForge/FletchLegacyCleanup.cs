@@ -67,13 +67,13 @@ internal static class FletchLegacyCleanup
         if (remaining > 0)
         {
             FletchersForgePlugin.Log?.LogWarning(
-                $"{remaining} legacy bench ZDO(s) still in memory after cleanup. ChestSnap errors may continue until they are removed and saved.");
+                $"{remaining} legacy bench ZDO(s) still in memory after cleanup.");
         }
 
         if (sanitizedViews > 0)
         {
             FletchersForgePlugin.Log?.LogInfo(
-                $"Removed {sanitizedViews} stale ZNetView entries from ZNetScene for ChestSnap.");
+                $"Removed {sanitizedViews} stale ZNetView entries from ZNetScene.");
         }
     }
 
