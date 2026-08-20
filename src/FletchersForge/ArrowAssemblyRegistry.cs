@@ -14,6 +14,14 @@ internal static class ArrowAssemblyRegistry
 
     private static readonly Dictionary<string, ArrowPair> ArrowToParts = new();
     private static readonly Dictionary<string, string> ShaftHeadToArrow = new();
+    private static readonly HashSet<string> BoltPrefabs = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "BoltBone",
+        "BoltIron",
+        "BoltBlackmetal",
+        "BoltCarapace",
+        "BoltCharred",
+    };
 
     internal static void Initialize()
     {
@@ -82,6 +90,13 @@ internal static class ArrowAssemblyRegistry
     internal static bool IsArrowPrefab(string prefabName) =>
         ArrowToParts.ContainsKey(NormalizePrefabName(prefabName));
 
+    internal static bool IsBoltPrefab(string prefabName) =>
+        BoltPrefabs.Contains(NormalizePrefabName(prefabName));
+
+    /// Bow arrows or crossbow bolts — usable as selected quiver ammo when ammo types match.
+    internal static bool IsProjectileAmmoPrefab(string prefabName) =>
+        IsArrowPrefab(prefabName) || IsBoltPrefab(prefabName);
+
     internal static bool IsShaftPrefab(string prefabName)
     {
         string name = NormalizePrefabName(prefabName);
@@ -104,7 +119,7 @@ internal static class ArrowAssemblyRegistry
         return IsKnifePrefab(prefabName) ||
                IsHeadPrefab(prefabName) ||
                IsShaftPrefab(prefabName) ||
-               IsArrowPrefab(prefabName);
+               IsProjectileAmmoPrefab(prefabName);
     }
 
     private static string Key(string shaft, string head) => $"{shaft}|{head ?? string.Empty}";

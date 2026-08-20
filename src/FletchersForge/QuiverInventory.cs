@@ -271,12 +271,75 @@ internal static class QuiverInventory
 
     internal static float GetTotalWeight()
     {
-        return inventory != null ? inventory.GetTotalWeight() : 0f;
+        Player player = Player.m_localPlayer;
+        return player != null ? GetCarriedQuiverContentsWeight(player) : 0f;
+    }
+
+    /// Contents of every quiver in the backpack (equipped or not). Quiver item weight is vanilla.
+    internal static float GetCarriedQuiverContentsWeight(Player player)
+    {
+        Inventory playerInventory = player?.GetInventory();
+        if (playerInventory == null)
+        {
+            return 0f;
+        }
+
+        float total = 0f;
+        foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
+        {
+            if (!IsQuiverItem(item))
+            {
+                continue;
+            }
+
+            if (item == boundQuiver && inventory != null)
+            {
+                total += inventory.GetTotalWeight();
+            }
+            else
+            {
+                total += ProbeStoredContentsWeight(item);
+            }
+        }
+
+        return total;
     }
 
     internal static bool IsTeleportable()
     {
-        return inventory == null || inventory.IsTeleportable();
+        Player player = Player.m_localPlayer;
+        if (player == null)
+        {
+            return inventory == null || inventory.IsTeleportable();
+        }
+
+        Inventory playerInventory = player.GetInventory();
+        if (playerInventory == null)
+        {
+            return true;
+        }
+
+        foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
+        {
+            if (!IsQuiverItem(item))
+            {
+                continue;
+            }
+
+            if (item == boundQuiver && inventory != null)
+            {
+                if (!inventory.IsTeleportable())
+                {
+                    return false;
+                }
+            }
+            else if (!ProbeStoredContentsTeleportable(item))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     internal static ItemDrop.ItemData GetSelectedItem()
@@ -288,7 +351,8 @@ internal static class QuiverInventory
     internal static bool TryGetSelectedArrow(ItemDrop.ItemData weapon, out ItemDrop.ItemData arrow)
     {
         arrow = GetSelectedItem();
-        if (arrow?.m_dropPrefab == null || !ArrowAssemblyRegistry.IsArrowPrefab(arrow.m_dropPrefab.name))
+        if (arrow?.m_dropPrefab == null ||
+            !ArrowAssemblyRegistry.IsProjectileAmmoPrefab(arrow.m_dropPrefab.name))
         {
             arrow = null;
             return false;
@@ -327,7 +391,7 @@ internal static class QuiverInventory
             return;
         }
 
-        if (ArrowAssemblyRegistry.IsArrowPrefab(item.m_dropPrefab.name))
+        if (ArrowAssemblyRegistry.IsProjectileAmmoPrefab(item.m_dropPrefab.name))
         {
             if (!TryEquipFromQuiver(player, item, triggerEquipEffects: true))
             {
@@ -447,6 +511,66 @@ internal static class QuiverInventory
 
         player.m_customData.Remove(ModConstants.QuiverSaveKey);
         SyncFromPlayer(player);
+    }
+
+    private static Inventory weightProbe;
+
+    private static Inventory EnsureWeightProbe()
+    {
+        if (weightProbe == null)
+        {
+            weightProbe = new Inventory("FF_QuiverWeightProbe", null, ModConstants.QuiverSlotCount, 1);
+        }
+
+        return weightProbe;
+    }
+
+    private static float ProbeStoredContentsWeight(ItemDrop.ItemData quiver)
+    {
+        if (!TryLoadStoredContents(quiver, EnsureWeightProbe()))
+        {
+            return 0f;
+        }
+
+        return weightProbe.GetTotalWeight();
+    }
+
+    private static bool ProbeStoredContentsTeleportable(ItemDrop.ItemData quiver)
+    {
+        if (!TryLoadStoredContents(quiver, EnsureWeightProbe()))
+        {
+            return true;
+        }
+
+        return weightProbe.IsTeleportable();
+    }
+
+    private static bool TryLoadStoredContents(ItemDrop.ItemData quiver, Inventory probe)
+    {
+        if (quiver == null || probe == null)
+        {
+            return false;
+        }
+
+        Dictionary<string, string> custom = EnsureCustomData(quiver);
+        if (!custom.TryGetValue(ContentsKey, out string data) || string.IsNullOrEmpty(data))
+        {
+            probe.RemoveAll();
+            return false;
+        }
+
+        try
+        {
+            probe.RemoveAll();
+            probe.Load(new ZPackage(Convert.FromBase64String(data)));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            FletchersForgePlugin.Log?.LogWarning($"Failed to probe quiver contents weight: {ex.Message}");
+            probe.RemoveAll();
+            return false;
+        }
     }
 
     private static void LoadBound()

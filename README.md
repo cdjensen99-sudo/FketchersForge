@@ -33,8 +33,10 @@ Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components 
 | **Split** arrows into shaft + head | Field — Fletcher's bench |
 | **Reforge** shaft + head into arrows | Field — Fletcher's bench |
 | **Rehead** arrows (swap head type) | Field — Fletcher's bench |
-| Keep several arrow types in a **quiver** and pick which the bow uses | Fletcher's quiver |
-| Carry finished ammo as normal **vanilla arrows** | Inventory / bow |
+| Keep several ammo types in a **quiver** and pick which the bow/crossbow uses | Fletcher's quiver |
+| Store **crossbow bolts** in the quiver (as well as arrows) | Fletcher's quiver |
+| See the quiver on your **back** while it is equipped | Cosmetic only |
+| Carry finished ammo as normal **vanilla arrows / bolts** | Inventory / bow / crossbow |
 
 There is **no material salvage** beyond shafts and heads (no wood/ore back from splitting).
 
@@ -48,7 +50,7 @@ This release adds custom 3D models:
 |-------|---------|
 | **Arrowhead bag** | Dropped arrowheads appear as a leather pouch, not a crate. |
 | **Fletcher's dagger** | The Fletcher's knife uses this dagger mesh when held or dropped. |
-| **Quiver** | The Fletcher's quiver uses this model when held or dropped. |
+| **Quiver** | The Fletcher's quiver uses this model when held, dropped, or shown on the back while equipped. |
 
 ---
 
@@ -59,7 +61,7 @@ This release adds custom 3D models:
 3. Craft a **Fletcher's knife** at the **Forge** (level 1).
 4. Hold the knife in your **hand** — the **Fletcher's bench** opens automatically.
 5. Use **Reforge** or **Split**. Results go **directly into your inventory**.
-6. Craft a **Fletcher's quiver**, **right-click** it in inventory to equip, then drag arrows into its eight slots.
+6. Craft a **Fletcher's quiver**, **right-click** it in inventory to equip, then drag arrows or crossbow bolts into its eight slots.
 
 ---
 
@@ -84,7 +86,7 @@ Craft a **Fletcher's quiver** and **right-click** it in your inventory to equip 
 | **Recipe** | Forge level 1 — Deer hide ×4, Bronze ×2, Fine wood ×4 |
 | **Equip** | Right-click the quiver in the backpack (toggle) |
 | **Slots** | **8**, stored **on the quiver item** (they travel with that quiver) |
-| **Accepts** | Vanilla arrows, shafts, arrowheads, and the Fletcher's knife |
+| **Accepts** | Vanilla arrows, crossbow bolts, shafts, arrowheads, and the Fletcher's knife |
 
 ### Loading the slots
 
@@ -92,10 +94,10 @@ With the quiver **equipped**, open your **inventory**. The eight quiver slots si
 
 ### Choosing ammo
 
-The bow shoots from the **selected** quiver slot.
+The bow or crossbow shoots from the **selected** quiver slot.
 
-- If that slot has arrows, those are used.
-- If it is empty or not arrows, the bow uses ammo from your **normal inventory** as usual.
+- If that slot has matching ammo (arrows for bows, bolts for crossbows), those are used.
+- If it is empty or the wrong ammo type, the weapon uses ammo from your **normal inventory** as usual.
 
 **While inventory is closed**, the quiver shows as a HUD bar under the hotbar.
 

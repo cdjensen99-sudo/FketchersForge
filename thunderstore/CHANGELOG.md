@@ -2,7 +2,9 @@
 
 ## 0.2.8
 
-- **Back cosmetic** - while the quiver is equipped, show the quiver mesh on your back (does not use the cape slot or block stowed weapons). Toggle with `QuiverBack.ShowOnBack`.
+- **Fixed:** Weight of the quiver and its contents now counts toward total carry weight when the quiver is unequipped but still in inventory.
+- **Added:** Quiver can hold crossbow bolts (bone, iron, black metal, carapace, charred) and use them when that slot is selected.
+- **Added:** Quiver appears on your back when equipped and is removed when unequipped (visual enhancement; does not use the cape slot). Toggle with `QuiverBack.ShowOnBack`.
 
 ## 0.2.7
 
