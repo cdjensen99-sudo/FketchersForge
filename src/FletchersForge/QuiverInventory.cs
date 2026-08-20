@@ -11,6 +11,7 @@ internal static class QuiverInventory
 {
     internal const string ContentsKey = "FF_QuiverInventory";
     internal const string SelectedSlotKey = "FF_QuiverSlot";
+    internal const string EquippedKey = "FF_QuiverEquipped";
 
     private static Inventory inventory;
     private static ItemDrop.ItemData boundQuiver;
@@ -54,7 +55,8 @@ internal static class QuiverInventory
     internal static void SyncFromPlayer(Player player)
     {
         EnsureCreated();
-        ItemDrop.ItemData quiver = FindFirstQuiver(player);
+        RefreshEquippedFlags(player);
+        ItemDrop.ItemData quiver = FindEquippedQuiver(player);
         if (quiver == boundQuiver)
         {
             return;
@@ -63,6 +65,24 @@ internal static class QuiverInventory
         SaveBound();
         boundQuiver = quiver;
         LoadBound();
+    }
+
+    private static void RefreshEquippedFlags(Player player)
+    {
+        Inventory playerInventory = player?.GetInventory();
+        if (playerInventory == null)
+        {
+            return;
+        }
+
+        foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
+        {
+            if (IsQuiverItem(item))
+            {
+                // Blue inventory highlight (same flag vanilla gear uses).
+                item.m_equipped = IsEquipped(item);
+            }
+        }
     }
 
     internal static ItemDrop.ItemData FindFirstQuiver(Player player)
@@ -75,7 +95,26 @@ internal static class QuiverInventory
 
         foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
         {
-            if (item?.m_dropPrefab != null && ArrowAssemblyRegistry.IsQuiverPrefab(item.m_dropPrefab.name))
+            if (IsQuiverItem(item))
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    internal static ItemDrop.ItemData FindEquippedQuiver(Player player)
+    {
+        Inventory playerInventory = player?.GetInventory();
+        if (playerInventory == null)
+        {
+            return null;
+        }
+
+        foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
+        {
+            if (IsQuiverItem(item) && IsEquipped(item))
             {
                 return item;
             }
@@ -85,6 +124,90 @@ internal static class QuiverInventory
     }
 
     internal static bool PlayerHasQuiver(Player player) => FindFirstQuiver(player) != null;
+
+    /// Active quiver: right-click equip in inventory. Gates HUD, inventory row, and bow ammo.
+    internal static bool PlayerHasEquippedQuiver(Player player) => FindEquippedQuiver(player) != null;
+
+    internal static bool IsQuiverItem(ItemDrop.ItemData item)
+    {
+        if (item == null)
+        {
+            return false;
+        }
+
+        if (item.m_shared?.m_name == "$FF_Quiver")
+        {
+            return true;
+        }
+
+        return item.m_dropPrefab != null && ArrowAssemblyRegistry.IsQuiverPrefab(item.m_dropPrefab.name);
+    }
+
+    internal static bool IsEquipped(ItemDrop.ItemData item)
+    {
+        if (!IsQuiverItem(item))
+        {
+            return false;
+        }
+
+        Dictionary<string, string> data = EnsureCustomData(item);
+        return data.TryGetValue(EquippedKey, out string value) && value == "1";
+    }
+
+    internal static bool ToggleEquip(Player player, ItemDrop.ItemData quiver)
+    {
+        if (player == null || !IsQuiverItem(quiver))
+        {
+            return false;
+        }
+
+        if (IsEquipped(quiver))
+        {
+            SetEquipped(quiver, false);
+            if (boundQuiver == quiver)
+            {
+                SaveBound();
+                boundQuiver = null;
+                LoadBound();
+            }
+
+            QuiverHud.NotifyQuiverUnequipped();
+            player.Message(MessageHud.MessageType.Center, "$FF_QuiverUnequipped");
+            return true;
+        }
+
+        UnequipAllQuivers(player, except: quiver);
+        SetEquipped(quiver, true);
+        SyncFromPlayer(player);
+        QuiverHud.NotifyQuiverEquipped();
+        player.Message(MessageHud.MessageType.Center, "$FF_QuiverEquipped");
+        return true;
+    }
+
+    /// Only one quiver may be equipped. Contents stay on each quiver item (separate custom data).
+    private static void UnequipAllQuivers(Player player, ItemDrop.ItemData except)
+    {
+        Inventory playerInventory = player?.GetInventory();
+        if (playerInventory == null)
+        {
+            return;
+        }
+
+        foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
+        {
+            if (item != except && IsQuiverItem(item) && IsEquipped(item))
+            {
+                SetEquipped(item, false);
+            }
+        }
+    }
+
+    private static void SetEquipped(ItemDrop.ItemData item, bool equipped)
+    {
+        Dictionary<string, string> data = EnsureCustomData(item);
+        data[EquippedKey] = equipped ? "1" : "0";
+        item.m_equipped = equipped;
+    }
 
     internal static bool Contains(ItemDrop.ItemData item)
     {

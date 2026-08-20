@@ -29,6 +29,9 @@ internal static class QuiverHud
     private static bool updateErrorLogged;
     private static bool hudDragging;
     private static bool invDragging;
+    /// Tracks InventoryGui open edge so the inventory row is only (re)built on a fresh open —
+    /// creating it mid-session (craft/equip while already open) leaves a non-interactive UI.
+    private static bool inventoryWasVisible;
 
     internal static RectTransform HudRootRect => hudRoot != null ? hudRoot.transform as RectTransform : null;
 
@@ -38,7 +41,7 @@ internal static class QuiverHud
         bool show = player != null &&
                     player.IsOwner() &&
                     !player.IsDead() &&
-                    QuiverInventory.PlayerHasQuiver(player);
+                    QuiverInventory.PlayerHasEquippedQuiver(player);
 
         if (!show)
         {
@@ -97,7 +100,7 @@ internal static class QuiverHud
         }
 
         Player player = Player.m_localPlayer;
-        if (player == null || !player.IsOwner() || player.IsDead() || !QuiverInventory.PlayerHasQuiver(player))
+        if (player == null || !player.IsOwner() || player.IsDead() || !QuiverInventory.PlayerHasEquippedQuiver(player))
         {
             return false;
         }
@@ -109,15 +112,29 @@ internal static class QuiverHud
     {
         if (!InventoryGui.IsVisible())
         {
+            inventoryWasVisible = false;
             SetActive(invRoot, false);
             return;
         }
 
         Player player = Player.m_localPlayer;
-        if (player == null || !player.IsOwner() || player.IsDead() || !QuiverInventory.PlayerHasQuiver(player))
+        if (player == null || !player.IsOwner() || player.IsDead() || !QuiverInventory.PlayerHasEquippedQuiver(player))
         {
+            // Inventory is open; keep the open-edge tracker so a later equip does not
+            // treat this as a fresh open and spawn a mid-session (dead) row.
+            inventoryWasVisible = true;
             SetActive(invRoot, false);
             return;
+        }
+
+        bool justOpened = !inventoryWasVisible;
+        inventoryWasVisible = true;
+
+        // Rebuild only when the inventory panel opens. Unequip/equip must not destroy a
+        // working row — recreating while the panel stays open is what made slots dead.
+        if (justOpened)
+        {
+            DestroyInventoryRow();
         }
 
         if (!EnsureInventoryRow())
@@ -129,6 +146,39 @@ internal static class QuiverHud
         SetActive(invRoot, true);
         UpdateGrid(invGrid, player);
         invRoot.transform.SetAsLastSibling();
+    }
+
+    internal static void NotifyQuiverEquipped()
+    {
+        // Reuse an existing interactive row. Never destroy/recreate mid-open inventory.
+        if (InventoryGui.IsVisible())
+        {
+            AfterInventoryGuiUpdate();
+        }
+    }
+
+    internal static void NotifyQuiverUnequipped()
+    {
+        SetActive(hudRoot, false);
+        SetActive(invRoot, false);
+    }
+
+    private static void DestroyInventoryRow()
+    {
+        if (invGrid != null)
+        {
+            boundGrids.Remove(invGrid);
+        }
+
+        if (invRoot != null)
+        {
+            UnityEngine.Object.DestroyImmediate(invRoot);
+        }
+
+        invRoot = null;
+        invGrid = null;
+        invBkg = null;
+        invDragging = false;
     }
 
     internal static void CancelPlayerCombatInput(Player player)
@@ -274,10 +324,8 @@ internal static class QuiverHud
             playerGrid.m_elementPrefab,
             playerGrid.m_elementSpace,
             out invGrid);
-        Canvas invCanvas = invRoot.AddComponent<Canvas>();
-        invCanvas.overrideSorting = true;
-        invCanvas.sortingOrder = 250;
-        invRoot.AddComponent<GraphicRaycaster>();
+        // Stay on the inventory canvas — a nested Canvas+raycaster created mid-session
+        // often never receives clicks (dead grips/slots until a full restart).
         AddMoveHandle(invRoot.transform as RectTransform, forInventory: true);
         PlaceInventoryRow(playerGrid);
         BindGrid(invGrid, activateWhenClosed: false);

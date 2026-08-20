@@ -2,7 +2,7 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 0.2.6  
+**Current version:** 0.2.7  
 **Requires:** BepInEx + Jötunn
 
 **Links**
@@ -59,7 +59,7 @@ This release adds custom 3D models:
 3. Craft a **Fletcher's knife** at the **Forge** (level 1).
 4. Hold the knife in your **hand** — the **Fletcher's bench** opens automatically.
 5. Use **Reforge** or **Split**. Results go **directly into your inventory**.
-6. Craft a **Fletcher's quiver**, keep it in your inventory, and drag arrows into its eight slots (and back out the same way).
+6. Craft a **Fletcher's quiver**, **right-click** it in inventory to equip, then drag arrows into its eight slots.
 
 ---
 
@@ -77,17 +77,18 @@ This release adds custom 3D models:
 
 ## Fletcher's quiver
 
-Craft a **Fletcher's quiver** and keep it in your inventory. It is not worn; having it on you is enough.
+Craft a **Fletcher's quiver** and **right-click** it in your inventory to equip or unequip. It does **not** use the cape/cloak slot. While equipped it unlocks the eight fletcher slots. You can carry **multiple quivers**; only **one** can be equipped at a time (contents stay on each quiver).
 
 | | |
 |--|--|
 | **Recipe** | Forge level 1 — Deer hide ×4, Bronze ×2, Fine wood ×4 |
+| **Equip** | Right-click the quiver in the backpack (toggle) |
 | **Slots** | **8**, stored **on the quiver item** (they travel with that quiver) |
 | **Accepts** | Vanilla arrows, shafts, arrowheads, and the Fletcher's knife |
 
 ### Loading the slots
 
-Open your **inventory**. The eight quiver slots sit **under the backpack**. Drag arrows (or other accepted items) in and out like any other inventory. **Ctrl-click** a quiver slot to send that stack straight to the backpack.
+With the quiver **equipped**, open your **inventory**. The eight quiver slots sit **under the backpack**. Drag arrows (or other accepted items) in and out like any other inventory. **Ctrl-click** a quiver slot to send that stack straight to the backpack.
 
 ### Choosing ammo
 

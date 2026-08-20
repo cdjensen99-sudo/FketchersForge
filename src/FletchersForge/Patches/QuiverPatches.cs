@@ -89,6 +89,30 @@ internal static class InventoryGuiUpdateQuiverDockPatch
     }
 }
 
+/// Right-click the quiver in the backpack to equip / unequip (does not use the cape slot).
+[HarmonyPatch(typeof(InventoryGui), "OnRightClickItem")]
+internal static class InventoryGuiRightClickQuiverEquipPatch
+{
+    [HarmonyPrefix]
+    private static bool Prefix(InventoryGrid grid, ItemDrop.ItemData item)
+    {
+        Player player = Player.m_localPlayer;
+        if (player == null || item == null || !QuiverInventory.IsQuiverItem(item))
+        {
+            return true;
+        }
+
+        Inventory playerInventory = player.GetInventory();
+        if (playerInventory == null || grid == null || grid.GetInventory() != playerInventory)
+        {
+            return true;
+        }
+
+        QuiverInventory.ToggleEquip(player, item);
+        return false;
+    }
+}
+
 /// Vanilla cancels any drag whose source is not the player inventory unless a chest is open.
 /// Quiver stacks live in a separate Inventory, so pickup was cleared the same frame.
 [HarmonyPatch(typeof(InventoryGui), "UpdateContainer")]
