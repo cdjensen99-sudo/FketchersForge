@@ -4,7 +4,7 @@ internal static class ModConstants
 {
     public const string ModGuid = "hardwire99.fletchersforge";
     public const string ModName = "Fletchers Forge";
-    public const string ModVersion = "0.2.7";
+    public const string ModVersion = "0.2.8";
 
     public const string AssetBundleName = "fletchersforge";
     public const string HeadPouchPrefabName = "FF_HeadPouch";
@@ -62,6 +62,16 @@ internal static class ModConstants
     public const float QuiverDropScale = 1.375f;
     public const int QuiverSlotCount = 8;
     public const string QuiverSaveKey = "FF_QuiverInventory";
+
+    // Back cosmetic (hardcoded from in-game tuning). FBX needs ~0.01 base scale.
+    public const float QuiverBackBaseScale = 0.011f; // ~10% larger than the 0.01 tuned look
+    public const float QuiverBackPosX = 0f;
+    public const float QuiverBackPosY = 0f;
+    public const float QuiverBackPosZ = 0.001f;
+    // Tip top toward the body (90 flared the opening out; 80 made it worse).
+    public const float QuiverBackEulerX = 105f;
+    public const float QuiverBackEulerY = 180f;
+    public const float QuiverBackEulerZ = 135f;
 
     public const int ShaftStackSize = 100;
     public const int HeadStackSize = 200;

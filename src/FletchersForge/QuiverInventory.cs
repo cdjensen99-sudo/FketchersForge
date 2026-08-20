@@ -172,6 +172,7 @@ internal static class QuiverInventory
             }
 
             QuiverHud.NotifyQuiverUnequipped();
+            QuiverBackVisual.Refresh(player);
             player.Message(MessageHud.MessageType.Center, "$FF_QuiverUnequipped");
             return true;
         }
@@ -180,6 +181,7 @@ internal static class QuiverInventory
         SetEquipped(quiver, true);
         SyncFromPlayer(player);
         QuiverHud.NotifyQuiverEquipped();
+        QuiverBackVisual.Refresh(player);
         player.Message(MessageHud.MessageType.Center, "$FF_QuiverEquipped");
         return true;
     }

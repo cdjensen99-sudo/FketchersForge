@@ -21,6 +21,7 @@ internal static class ModConfig
     internal static ConfigEntry<bool> QuiverInvCustomPosition;
     internal static ConfigEntry<float> QuiverInvPosX;
     internal static ConfigEntry<float> QuiverInvPosY;
+    internal static ConfigEntry<bool> ShowQuiverOnBack;
 
     internal static void Bind(ConfigFile config)
     {
@@ -123,6 +124,12 @@ internal static class ModConfig
             "InvPosY",
             0f,
             "Saved inventory-row Y after dragging the left grip.");
+
+        ShowQuiverOnBack = config.Bind(
+            "QuiverBack",
+            "ShowOnBack",
+            true,
+            "When the quiver is equipped, show a cosmetic mesh on your back (does not use the cape slot).");
     }
 
     internal static string FormatKey(KeyCode key)

@@ -2,7 +2,7 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 0.2.7  
+**Current version:** 0.2.8  
 **Requires:** BepInEx + Jötunn
 
 **Links**
@@ -77,7 +77,7 @@ This release adds custom 3D models:
 
 ## Fletcher's quiver
 
-Craft a **Fletcher's quiver** and **right-click** it in your inventory to equip or unequip. It does **not** use the cape/cloak slot. While equipped it unlocks the eight fletcher slots. You can carry **multiple quivers**; only **one** can be equipped at a time (contents stay on each quiver).
+Craft a **Fletcher's quiver** and **right-click** it in your inventory to equip or unequip. It does **not** use the cape/cloak slot. While equipped it unlocks the eight fletcher slots and shows a **cosmetic quiver on your back**. You can carry **multiple quivers**; only **one** can be equipped at a time (contents stay on each quiver).
 
 | | |
 |--|--|

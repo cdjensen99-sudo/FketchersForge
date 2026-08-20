@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.8
+
+- **Back cosmetic** - while the quiver is equipped, show the quiver mesh on your back (does not use the cape slot or block stowed weapons). Toggle with `QuiverBack.ShowOnBack`.
+
 ## 0.2.7
 
 - **Fixed:** Initial quiver creation bug. Quiver slots did not work when first created and needed a game restart. Fixed by requiring the quiver to be **equipped** (right-click / RMB in inventory) before the quiver inventory space opens.

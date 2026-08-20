@@ -31,7 +31,7 @@ internal static class LocalizationRegistrar
         loc.AddTranslation("English", "FF_HeadCharred", "Charred arrowhead");
         loc.AddTranslation("English", "FF_Quiver", "Fletcher's quiver");
         loc.AddTranslation("English", "FF_Quiver_desc",
-            "Right-click in inventory to equip or unequip. While equipped: eight fletcher slots under the backpack and HUD when inventory is closed. Hold ~ to free the mouse and click a HUD slot, or hold [ with 1–8.");
+            "Right-click in inventory to equip or unequip. While equipped: eight fletcher slots under the backpack, HUD when inventory is closed, and a cosmetic quiver on your back. Hold ~ to free the mouse and click a HUD slot, or hold [ with 1–8.");
         loc.AddTranslation("English", "FF_QuiverEquipped", "Equipped Fletcher's quiver");
         loc.AddTranslation("English", "FF_QuiverUnequipped", "Unequipped Fletcher's quiver");
         loc.AddTranslation("English", "FF_FletchContainer", "Fletcher's bench");
