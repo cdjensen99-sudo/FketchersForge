@@ -348,21 +348,54 @@ internal static class QuiverInventory
         return inventory.GetItemAt(SelectedSlot, 0);
     }
 
+    /// Matching ammo for a bow/crossbow only. Melee and staffs have no ammo type and must not
+    /// consume quiver stacks. Empty selected slot falls through to the next matching slot.
     internal static bool TryGetSelectedArrow(ItemDrop.ItemData weapon, out ItemDrop.ItemData arrow)
     {
-        arrow = GetSelectedItem();
-        if (arrow?.m_dropPrefab == null ||
-            !ArrowAssemblyRegistry.IsProjectileAmmoPrefab(arrow.m_dropPrefab.name))
+        arrow = null;
+        if (weapon?.m_shared == null || string.IsNullOrWhiteSpace(weapon.m_shared.m_ammoType))
         {
-            arrow = null;
             return false;
         }
 
-        if (weapon?.m_shared != null &&
-            !string.IsNullOrEmpty(weapon.m_shared.m_ammoType) &&
-            arrow.m_shared.m_ammoType != weapon.m_shared.m_ammoType)
+        EnsureCreated();
+        string ammoType = weapon.m_shared.m_ammoType;
+        if (TryGetSlotAmmo(SelectedSlot, ammoType, out arrow))
         {
-            arrow = null;
+            return true;
+        }
+
+        for (int i = 0; i < ModConstants.QuiverSlotCount; i++)
+        {
+            if (i == SelectedSlot)
+            {
+                continue;
+            }
+
+            if (TryGetSlotAmmo(i, ammoType, out arrow))
+            {
+                SelectedSlot = i;
+                SaveBound();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryGetSlotAmmo(int slot, string ammoType, out ItemDrop.ItemData ammo)
+    {
+        ammo = inventory != null ? inventory.GetItemAt(slot, 0) : null;
+        if (ammo?.m_dropPrefab == null || ammo.m_shared == null || ammo.m_stack <= 0)
+        {
+            ammo = null;
+            return false;
+        }
+
+        if (!ArrowAssemblyRegistry.IsProjectileAmmoPrefab(ammo.m_dropPrefab.name) ||
+            ammo.m_shared.m_ammoType != ammoType)
+        {
+            ammo = null;
             return false;
         }
 

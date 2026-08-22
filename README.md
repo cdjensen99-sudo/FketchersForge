@@ -2,7 +2,7 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 0.2.8  
+**Current version:** 0.2.9  
 **Requires:** BepInEx + Jötunn
 
 **Links**
@@ -97,7 +97,9 @@ With the quiver **equipped**, open your **inventory**. The eight quiver slots si
 The bow or crossbow shoots from the **selected** quiver slot.
 
 - If that slot has matching ammo (arrows for bows, bolts for crossbows), those are used.
-- If it is empty or the wrong ammo type, the weapon uses ammo from your **normal inventory** as usual.
+- If it is empty or the wrong ammo type, the next matching quiver slot is used (and becomes selected).
+- If no quiver slot matches, the weapon uses ammo from your **normal inventory** as usual.
+- Melee weapons and staffs do **not** use quiver ammo.
 
 **While inventory is closed**, the quiver shows as a HUD bar under the hotbar.
 

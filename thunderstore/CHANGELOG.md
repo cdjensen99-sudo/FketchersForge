@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.9
+
+- **Fixed:** Melee weapons and staffs no longer consume arrows from an equipped quiver.
+- **Fixed:** When the selected quiver slot is empty, the bow or crossbow uses the next matching quiver slot instead of stopping.
+
 ## 0.2.8
 
 - **Fixed:** Weight of the quiver and its contents now counts toward total carry weight when the quiver is unequipped but still in inventory.
