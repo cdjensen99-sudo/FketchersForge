@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.10
+
+- **Fixed:** Rare tombstone crashes when dying with an equipped quiver (reported with AzuExtendedPlayerInventory). Take All could interact badly with Fletcher equip state and packed quiver contents while extended-inventory mods auto-equipped items from equipment cells.
+- **Changed:** On death, equipped quivers are unequipped before items move to the tombstone. After looting the grave, the quiver stays **unequipped** until you right-click it again — the eight-slot row and HUD do not open during Take All.
+
 ## 0.2.9
 
 - **Fixed:** Melee weapons and staffs no longer consume arrows from an equipped quiver.

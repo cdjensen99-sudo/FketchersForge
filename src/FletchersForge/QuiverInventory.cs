@@ -186,6 +186,58 @@ internal static class QuiverInventory
         return true;
     }
 
+    /// Death / tombstone retrieve: drop Fletcher equip so the grave copy is a normal item
+    /// and Take All does not bind the extra quiver inventory.
+    internal static void UnequipAllForDeath(Player player)
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        Inventory playerInventory = player.GetInventory();
+        if (playerInventory == null)
+        {
+            return;
+        }
+
+        SaveBound();
+        bool wasBound = boundQuiver != null;
+        foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
+        {
+            if (IsQuiverItem(item) && (IsEquipped(item) || item.m_equipped))
+            {
+                SetEquipped(item, false);
+            }
+        }
+
+        if (wasBound)
+        {
+            boundQuiver = null;
+            LoadBound();
+        }
+
+        QuiverHud.NotifyQuiverUnequipped();
+        QuiverBackVisual.Refresh(player);
+    }
+
+    /// Incoming quiver (grave, chest, world) must not arrive Fletcher-equipped.
+    internal static void StripIncomingIfNewToPlayerBag(Inventory dest, ItemDrop.ItemData item)
+    {
+        Player player = Player.m_localPlayer;
+        if (player == null || dest == null || item == null || dest != player.GetInventory())
+        {
+            return;
+        }
+
+        if (!IsQuiverItem(item) || dest.ContainsItem(item))
+        {
+            return;
+        }
+
+        SetEquipped(item, false);
+    }
+
     /// Only one quiver may be equipped. Contents stay on each quiver item (separate custom data).
     private static void UnequipAllQuivers(Player player, ItemDrop.ItemData except)
     {

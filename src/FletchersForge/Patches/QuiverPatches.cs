@@ -17,6 +17,39 @@ internal static class PlayerSaveQuiverPatch
     }
 }
 
+/// Unequip before vanilla copies the bag. Equipped items are skipped by MoveInventoryToGrave.
+[HarmonyPatch(typeof(Player), nameof(Player.CreateTombStone))]
+internal static class PlayerCreateTombStoneUnequipQuiverPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPriority(Priority.First)]
+    private static void Prefix(Player __instance)
+    {
+        if (__instance != null && __instance.IsOwner())
+        {
+            QuiverInventory.UnequipAllForDeath(__instance);
+        }
+    }
+}
+
+/// Quiver equip is RMB (FF_QuiverEquipped), not vanilla EquipItem. Skip AutoEquip / extra-slot EquipItem.
+[HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipItem))]
+internal static class HumanoidEquipItemSkipQuiverPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPriority(Priority.First)]
+    private static bool Prefix(ItemDrop.ItemData item, ref bool __result)
+    {
+        if (!QuiverInventory.IsQuiverItem(item))
+        {
+            return true;
+        }
+
+        __result = false;
+        return false;
+    }
+}
+
 [HarmonyPatch(typeof(Player), nameof(Player.UseHotbarItem))]
 internal static class PlayerUseHotbarItemQuiverPatch
 {
@@ -216,6 +249,7 @@ internal static class InventoryAddItemQuiverPatch
 
     internal static bool AcceptOrReject(Inventory inventory, ItemDrop.ItemData item, ref bool result)
     {
+        QuiverInventory.StripIncomingIfNewToPlayerBag(inventory, item);
         if (!QuiverInventory.Is(inventory))
         {
             return true;
@@ -238,6 +272,16 @@ internal static class InventoryAddItemNoPosQuiverPatch
     private static bool Prefix(Inventory __instance, ItemDrop.ItemData item, ref bool __result)
     {
         return InventoryAddItemQuiverPatch.AcceptOrReject(__instance, item, ref __result);
+    }
+}
+
+[HarmonyPatch(typeof(Inventory), "AddItem", typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]
+internal static class InventoryAddItemXYQuiverPatch
+{
+    [HarmonyPrefix]
+    private static void Prefix(Inventory __instance, ItemDrop.ItemData item)
+    {
+        QuiverInventory.StripIncomingIfNewToPlayerBag(__instance, item);
     }
 }
 

@@ -2,7 +2,7 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 0.2.9  
+**Current version:** 0.2.10  
 **Requires:** BepInEx + Jötunn
 
 **Links**
@@ -122,6 +122,12 @@ The closed-inventory quiver bar can be moved.
 ### Moving the inventory row
 
 While inventory is open, the quiver row starts under the backpack. Drag the **left grip** to move it (clicking a slot still moves items). That spot is saved until you drag it again. **Right-click** the grip to put it back under the backpack.
+
+### Death and tombstone
+
+If you die while a quiver is **equipped**, the mod **unequips it automatically** before your items go to the tombstone. When you loot the grave (Take All or dragging), the quiver returns as a **normal unequipped item** in your inventory — not Fletcher-equipped. Its eight slots and HUD stay **off** until you **right-click** the quiver again.
+
+This avoids conflicts with extended-inventory mods (for example AzuExtendedPlayerInventory) that auto-equip gear from tombstone cells while the quiver’s extra inventory was still active.
 
 ---
 
