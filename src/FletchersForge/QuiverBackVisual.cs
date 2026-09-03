@@ -1,63 +1,145 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FletchersForge;
 
 /// Cosmetic quiver on the back while equipped.
-/// Parents a centered FF_Quiver mesh to BackShield_attach / VisEquipment.m_backShield.
+/// Owner writes FF_QuiverBack on the player ZDO; every client attaches a mesh when that flag is set.
 internal static class QuiverBackVisual
 {
     private const string InstanceName = "FF_QuiverBackCosmetic";
     private const string MeshName = "FF_QuiverBackMesh";
     private const string PreferredJointName = "BackShield_attach";
+    private const string ZdoKey = "FF_QuiverBack";
 
-    private static GameObject instance;
-    private static Transform meshTransform;
-    private static Transform joint;
-    private static bool missingJointLogged;
+    private static readonly int ZdoHash = ZdoKey.GetStableHashCode();
+    private static readonly Dictionary<Player, Attached> Attachments = new Dictionary<Player, Attached>();
+    private static readonly List<Player> ScratchPlayers = new List<Player>();
+    private static readonly List<Player> ToRemove = new List<Player>();
     private static bool missingPrefabLogged;
 
-    internal static void UpdateLocal()
+    private sealed class Attached
     {
-        Player player = Player.m_localPlayer;
-        if (player == null || !player.IsOwner() || player.IsDead())
+        public GameObject Root;
+        public Transform Mesh;
+        public Transform Joint;
+    }
+
+    /// Owner: publish equipped-quiver state so remote clients can render the back mesh.
+    internal static void SyncOwnerZdo(Player player)
+    {
+        if (player == null || !player.IsOwner())
         {
-            Clear();
             return;
         }
 
-        bool want = ModConfig.ShowQuiverOnBack != null &&
-                    ModConfig.ShowQuiverOnBack.Value &&
-                    QuiverInventory.PlayerHasEquippedQuiver(player);
-
-        if (!want)
+        ZNetView nview = player.GetComponent<ZNetView>();
+        ZDO zdo = nview != null && nview.IsValid() ? nview.GetZDO() : null;
+        if (zdo == null)
         {
-            Clear();
             return;
         }
 
-        if (instance == null || joint == null || meshTransform == null)
+        bool want = QuiverInventory.PlayerHasEquippedQuiver(player);
+        if (zdo.GetBool(ZdoHash, false) != want)
+        {
+            zdo.Set(ZdoHash, want);
+        }
+    }
+
+    internal static void UpdateAll()
+    {
+        Player local = Player.m_localPlayer;
+        if (local != null && local.IsOwner())
+        {
+            SyncOwnerZdo(local);
+        }
+
+        ScratchPlayers.Clear();
+        ScratchPlayers.AddRange(Player.GetAllPlayers());
+
+        foreach (Player player in ScratchPlayers)
+        {
+            UpdatePlayer(player);
+        }
+
+        ToRemove.Clear();
+        foreach (KeyValuePair<Player, Attached> pair in Attachments)
+        {
+            if (pair.Key == null || !ScratchPlayers.Contains(pair.Key))
+            {
+                ToRemove.Add(pair.Key);
+            }
+        }
+
+        foreach (Player gone in ToRemove)
+        {
+            ClearPlayer(gone);
+        }
+    }
+
+    internal static void Refresh(Player player)
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        SyncOwnerZdo(player);
+        ClearPlayer(player);
+        UpdatePlayer(player);
+    }
+
+    private static void UpdatePlayer(Player player)
+    {
+        if (player == null || player.IsDead())
+        {
+            ClearPlayer(player);
+            return;
+        }
+
+        if (!ShouldShow(player))
+        {
+            ClearPlayer(player);
+            return;
+        }
+
+        if (!Attachments.TryGetValue(player, out Attached attached) ||
+            attached == null ||
+            attached.Root == null ||
+            attached.Joint == null ||
+            attached.Mesh == null ||
+            attached.Root.transform.parent != attached.Joint)
         {
             Attach(player);
             return;
         }
 
-        ApplyLocalPose();
+        ApplyLocalPose(attached.Root);
     }
 
-    internal static void Refresh(Player player)
+    private static bool ShouldShow(Player player)
     {
-        if (player == null || player != Player.m_localPlayer)
+        ZNetView nview = player.GetComponent<ZNetView>();
+        ZDO zdo = nview != null && nview.IsValid() ? nview.GetZDO() : null;
+        if (zdo == null || !zdo.GetBool(ZdoHash, false))
         {
-            return;
+            return false;
         }
 
-        Clear();
-        UpdateLocal();
+        // Local config only hides your own back mesh; others still see you.
+        if (player == Player.m_localPlayer &&
+            (ModConfig.ShowQuiverOnBack == null || !ModConfig.ShowQuiverOnBack.Value))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static void Attach(Player player)
     {
-        Clear();
+        ClearPlayer(player);
 
         GameObject meshPrefab = AssetBundleLoader.QuiverPrefab;
         if (meshPrefab == null)
@@ -72,40 +154,37 @@ internal static class QuiverBackVisual
         }
 
         VisEquipment vis = player.GetComponent<VisEquipment>();
-        joint = ResolveBackJoint(player, vis);
+        Transform joint = ResolveBackJoint(player, vis);
         if (joint == null)
         {
-            if (!missingJointLogged)
-            {
-                missingJointLogged = true;
-                FletchersForgePlugin.Log?.LogWarning("Quiver back cosmetic: no back joint yet.");
-            }
-
             return;
         }
 
-        instance = new GameObject(InstanceName);
-        instance.transform.SetParent(joint, false);
+        GameObject root = new GameObject(InstanceName);
+        root.transform.SetParent(joint, false);
 
-        GameObject mesh = Object.Instantiate(meshPrefab, instance.transform);
+        GameObject mesh = Object.Instantiate(meshPrefab, root.transform);
         mesh.name = MeshName;
-        meshTransform = mesh.transform;
+        Transform meshTransform = mesh.transform;
         meshTransform.localPosition = Vector3.zero;
         meshTransform.localRotation = Quaternion.identity;
         meshTransform.localScale = Vector3.one;
         CustomVisualUtility.PrepareBundledInstance(mesh);
         CustomVisualUtility.ApplyMaterialsFromSource(mesh, AssetBundleLoader.HeadPouchPrefab);
 
-        // Scale first, then center geometry on the joint, then apply hardcoded pose.
-        instance.transform.localPosition = Vector3.zero;
-        instance.transform.localRotation = Quaternion.identity;
-        instance.transform.localScale = Vector3.one * ModConstants.QuiverBackBaseScale;
+        root.transform.localPosition = Vector3.zero;
+        root.transform.localRotation = Quaternion.identity;
+        root.transform.localScale = Vector3.one * ModConstants.QuiverBackBaseScale;
 
         CenterChildOnLocalOrigin(meshTransform);
-        ApplyLocalPose();
+        ApplyLocalPose(root);
 
-        FletchersForgePlugin.Log?.LogInfo(
-            $"Quiver back cosmetic on joint '{joint.name}' (scale={ModConstants.QuiverBackBaseScale}).");
+        Attachments[player] = new Attached
+        {
+            Root = root,
+            Mesh = meshTransform,
+            Joint = joint,
+        };
     }
 
     private static Transform ResolveBackJoint(Player player, VisEquipment vis)
@@ -216,33 +295,40 @@ internal static class QuiverBackVisual
         child.localPosition -= localCenter;
     }
 
-    private static void ApplyLocalPose()
+    private static void ApplyLocalPose(GameObject root)
     {
-        if (instance == null)
+        if (root == null)
         {
             return;
         }
 
-        instance.transform.localPosition = new Vector3(
+        root.transform.localPosition = new Vector3(
             ModConstants.QuiverBackPosX,
             ModConstants.QuiverBackPosY,
             ModConstants.QuiverBackPosZ);
-        instance.transform.localRotation = Quaternion.Euler(
+        root.transform.localRotation = Quaternion.Euler(
             ModConstants.QuiverBackEulerX,
             ModConstants.QuiverBackEulerY,
             ModConstants.QuiverBackEulerZ);
-        instance.transform.localScale = Vector3.one * ModConstants.QuiverBackBaseScale;
+        root.transform.localScale = Vector3.one * ModConstants.QuiverBackBaseScale;
     }
 
-    private static void Clear()
+    private static void ClearPlayer(Player player)
     {
-        if (instance != null)
+        if (player == null)
         {
-            Object.Destroy(instance);
-            instance = null;
+            return;
         }
 
-        meshTransform = null;
-        joint = null;
+        if (!Attachments.TryGetValue(player, out Attached attached))
+        {
+            return;
+        }
+
+        Attachments.Remove(player);
+        if (attached?.Root != null)
+        {
+            Object.Destroy(attached.Root);
+        }
     }
 }

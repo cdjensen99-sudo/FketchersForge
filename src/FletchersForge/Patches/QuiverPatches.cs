@@ -17,21 +17,6 @@ internal static class PlayerSaveQuiverPatch
     }
 }
 
-/// Unequip before vanilla copies the bag. Equipped items are skipped by MoveInventoryToGrave.
-[HarmonyPatch(typeof(Player), nameof(Player.CreateTombStone))]
-internal static class PlayerCreateTombStoneUnequipQuiverPatch
-{
-    [HarmonyPrefix]
-    [HarmonyPriority(Priority.First)]
-    private static void Prefix(Player __instance)
-    {
-        if (__instance != null && __instance.IsOwner())
-        {
-            QuiverInventory.UnequipAllForDeath(__instance);
-        }
-    }
-}
-
 /// Quiver equip is RMB (FF_QuiverEquipped), not vanilla EquipItem. Skip AutoEquip / extra-slot EquipItem.
 [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipItem))]
 internal static class HumanoidEquipItemSkipQuiverPatch

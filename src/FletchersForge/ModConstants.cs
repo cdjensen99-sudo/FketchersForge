@@ -4,7 +4,7 @@ internal static class ModConstants
 {
     public const string ModGuid = "hardwire99.fletchersforge";
     public const string ModName = "Fletchers Forge";
-    public const string ModVersion = "0.2.10";
+    public const string ModVersion = "0.2.11";
 
     public const string AssetBundleName = "fletchersforge";
     public const string HeadPouchPrefabName = "FF_HeadPouch";

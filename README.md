@@ -2,7 +2,7 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 0.2.10  
+**Current version:** 0.2.11  
 **Requires:** BepInEx + Jötunn
 
 **Links**
@@ -125,9 +125,13 @@ While inventory is open, the quiver row starts under the backpack. Drag the **le
 
 ### Death and tombstone
 
-If you die while a quiver is **equipped**, the mod **unequips it automatically** before your items go to the tombstone. When you loot the grave (Take All or dragging), the quiver returns as a **normal unequipped item** in your inventory — not Fletcher-equipped. Its eight slots and HUD stay **off** until you **right-click** the quiver again.
+If you die while a quiver is **equipped**, the mod **unequips it**, unpacks its contents into empty backpack cells (and temporary extra tombstone rows if needed), then copies everything to the grave as normal items. After you loot the tombstone, tagged stacks are **put back into that quiver** and the quiver is **Fletcher-equipped** again so the eight slots and HUD return.
 
-This avoids conflicts with extended-inventory mods (for example AzuExtendedPlayerInventory) that auto-equip gear from tombstone cells while the quiver’s extra inventory was still active.
+Extra tombstone height is applied **after** AzuExtendedPlayerInventory’s `GetFullHeight` when that mod is present (`HarmonyAfter`), and the same path works in vanilla without it.
+
+### Multiplayer back visual
+
+Other players see your equipped quiver on your back. Equip state is synced on your player ZDO (`FF_QuiverBack`); each client attaches the cosmetic mesh locally. Your `ShowOnBack` config only hides **your own** view of yourself.
 
 ---
 

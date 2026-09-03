@@ -263,6 +263,31 @@ internal static class QuiverInventory
         item.m_equipped = equipped;
     }
 
+    internal static void SetEquippedPublic(ItemDrop.ItemData item, bool equipped)
+    {
+        if (!IsQuiverItem(item))
+        {
+            return;
+        }
+
+        SetEquipped(item, equipped);
+    }
+
+    /// After tombstone repack: only one Fletcher-equipped quiver.
+    internal static void EquipOnly(Player player, ItemDrop.ItemData quiver)
+    {
+        if (player == null || !IsQuiverItem(quiver))
+        {
+            return;
+        }
+
+        UnequipAllQuivers(player, except: quiver);
+        SetEquipped(quiver, true);
+        SyncFromPlayer(player);
+        QuiverHud.NotifyQuiverEquipped();
+        QuiverBackVisual.Refresh(player);
+    }
+
     internal static bool Contains(ItemDrop.ItemData item)
     {
         return inventory != null && item != null && inventory.ContainsItem(item);

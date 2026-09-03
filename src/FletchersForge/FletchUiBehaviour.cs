@@ -7,7 +7,7 @@ internal sealed class FletchUiBehaviour : MonoBehaviour
     private void Update()
     {
         QuiverHud.Update();
-        QuiverBackVisual.UpdateLocal();
+        QuiverBackVisual.UpdateAll();
     }
 
     private void OnGUI()

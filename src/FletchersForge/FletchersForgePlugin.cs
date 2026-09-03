@@ -10,6 +10,7 @@ namespace FletchersForge;
 
 [BepInPlugin(ModConstants.ModGuid, ModConstants.ModName, ModConstants.ModVersion)]
 [BepInDependency(Main.ModGuid)]
+[BepInDependency("Azumatt.AzuExtendedPlayerInventory", BepInDependency.DependencyFlags.SoftDependency)]
 public sealed class FletchersForgePlugin : BaseUnityPlugin
 {
     internal static ManualLogSource Log;

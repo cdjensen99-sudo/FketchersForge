@@ -129,7 +129,7 @@ internal static class ModConfig
             "QuiverBack",
             "ShowOnBack",
             true,
-            "When the quiver is equipped, show a cosmetic mesh on your back (does not use the cape slot).");
+            "When the quiver is equipped, show a cosmetic mesh on your back (does not use the cape slot). Only affects your view of yourself; other players still see your quiver in multiplayer.");
     }
 
     internal static string FormatKey(KeyCode key)

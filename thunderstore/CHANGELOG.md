@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.11
+
+- **Fixed:** Equipped quiver on the back is visible to other players in multiplayer (ZDO sync + per-player mesh).
+- **Fixed:** Tombstone path for packed quiver contents — unequip on death, unpack into empty bag cells, add temporary extra tombstone rows when needed (`HarmonyAfter` AzuEPI so height applies after `GetFullHeight`), then after loot put stacks back into the matching quiver and Fletcher-equip it again.
+- **Changed:** Death dump / repack replaces the earlier “stay unequipped after Take All” workaround as the primary tombstone solution.
+
 ## 0.2.10
 
 - **Fixed:** Rare tombstone crashes when dying with an equipped quiver (reported with AzuExtendedPlayerInventory). Take All could interact badly with Fletcher equip state and packed quiver contents while extended-inventory mods auto-equipped items from equipment cells.
