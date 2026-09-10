@@ -13,16 +13,27 @@ internal static class PlayerSpawnCleanupPatch
     [HarmonyPostfix]
     private static void Postfix(Player __instance)
     {
-        if (__instance == null || !__instance.IsOwner() || spawnCleanupDone)
+        if (__instance == null || !__instance.IsOwner())
         {
             return;
         }
 
-        spawnCleanupDone = true;
-        RestoreVanillaInventoryHeight(__instance);
-        QuiverInventory.MigrateLegacyPlayerData(__instance);
-        // Backup if ZDOMan.Load already completed before player spawn.
-        FletchLegacyCleanup.Run();
+        if (!spawnCleanupDone)
+        {
+            spawnCleanupDone = true;
+            RestoreVanillaInventoryHeight(__instance);
+            QuiverInventory.MigrateLegacyPlayerData(__instance);
+            // Backup if ZDOMan.Load / LoadChunks already completed before player spawn.
+            FletchLegacyCleanup.Run();
+        }
+
+        // Every spawn/login: rebind Fletcher-equip from saved custom data.
+        QuiverInventory.SyncFromPlayer(__instance);
+        if (QuiverInventory.PlayerHasEquippedQuiver(__instance))
+        {
+            QuiverHud.NotifyQuiverEquipped();
+            QuiverBackVisual.Refresh(__instance);
+        }
     }
 
     private static bool IsAzuEpiLoaded()
@@ -39,9 +50,17 @@ internal static class PlayerSpawnCleanupPatch
     }
 
     /// 0.1.38–0.1.39 added a 5th inventory row before the quiver item existed.
+    /// Do not touch height 5+ when Haldor Deeper Pockets (invrows) legitimately raised it.
     private static void RestoreVanillaInventoryHeight(Player player)
     {
         if (IsAzuEpiLoaded())
+        {
+            return;
+        }
+
+        if (player.TryGetUniqueKeyValue(Player.InventoryRowsKey, out string invRows) &&
+            int.TryParse(invRows, out int rows) &&
+            rows >= 5)
         {
             return;
         }

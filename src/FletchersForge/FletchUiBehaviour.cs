@@ -6,6 +6,8 @@ internal sealed class FletchUiBehaviour : MonoBehaviour
 {
     private void Update()
     {
+        QuiverTombstoneDump.ProcessDeferredRestore();
+        QuiverTombstoneDump.ProcessDeferredEquip();
         QuiverHud.Update();
         QuiverBackVisual.UpdateAll();
     }

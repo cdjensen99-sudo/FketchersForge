@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace FletchersForge;
 
-/// Death: unpack quiver contents into the player bag / tombstone extra rows.
-/// Loot: put tagged stacks back onto the matching quiver, then Fletcher-equip.
+/// Death: keep Fletcher ammo in reserved real bag cells so tombstone/Take All are vanilla.
+/// Loot: Fletcher-equip the remembered quiver and reclaim tagged stacks into reserved cells.
 internal static class QuiverTombstoneDump
 {
     internal const string QuiverIdKey = "FF_QuiverId";
@@ -17,19 +17,16 @@ internal static class QuiverTombstoneDump
     private static readonly int ExtraRowsZdoHash = ExtraRowsZdoKey.GetStableHashCode();
     private static readonly int AbsoluteHeightZdoHash = AbsoluteHeightZdoKey.GetStableHashCode();
 
-    private static readonly List<ItemDrop.ItemData> PendingStacks = new List<ItemDrop.ItemData>();
-
-    /// Extra tombstone rows needed for PendingStacks (set before Instantiate/Awake).
-    internal static int PendingExtraRows { get; private set; }
-
-    private static bool repacking;
-    private static bool deathDumpActive;
+    private static readonly HashSet<string> PendingRestoreEquipIds = new HashSet<string>();
+    private static string preferredRestoreEquipId;
+    private static bool deferredRestoreRequested;
+    private static bool deferredEquipRequested;
+    private static ItemDrop.ItemData deferredEquipQuiver;
 
     internal static void ClearPending()
     {
-        PendingStacks.Clear();
-        PendingExtraRows = 0;
-        deathDumpActive = false;
+        PendingRestoreEquipIds.Clear();
+        preferredRestoreEquipId = null;
     }
 
     internal static string EnsureQuiverId(ItemDrop.ItemData quiver)
@@ -44,341 +41,287 @@ internal static class QuiverTombstoneDump
         return id;
     }
 
-    /// Unequip, unpack into empty player cells, queue overflow, wipe packed data.
+    internal static void RememberEquippedQuiver(ItemDrop.ItemData quiver)
+    {
+        if (quiver == null)
+        {
+            return;
+        }
+
+        string id = EnsureQuiverId(quiver);
+        PendingRestoreEquipIds.Add(id);
+        preferredRestoreEquipId = id;
+    }
+
+    internal static bool ShouldRestoreEquipFor(ItemDrop.ItemData quiver)
+    {
+        if (!QuiverInventory.IsQuiverItem(quiver) || PendingRestoreEquipIds.Count == 0)
+        {
+            return false;
+        }
+
+        Dictionary<string, string> data = EnsureCustomData(quiver);
+        return data.TryGetValue(QuiverIdKey, out string id) &&
+               !string.IsNullOrEmpty(id) &&
+               PendingRestoreEquipIds.Contains(id);
+    }
+
+    /// Push ammo into reserved bag cells, strip Fletcher equip, keep height until grave copy.
     internal static void PreparePlayerDeathDump(Player player)
     {
-        ClearPending();
         if (player == null)
         {
             return;
         }
 
-        deathDumpActive = true;
-        Inventory bag = player.GetInventory();
-        if (bag == null)
-        {
-            deathDumpActive = false;
-            return;
-        }
-
-        QuiverInventory.UnequipAllForDeath(player);
-
-        List<ItemDrop.ItemData> quivers = new List<ItemDrop.ItemData>();
-        foreach (ItemDrop.ItemData item in bag.GetAllItems())
-        {
-            if (QuiverInventory.IsQuiverItem(item))
-            {
-                quivers.Add(item);
-            }
-        }
-
-        Inventory scratch = new Inventory("FF_QuiverDeathScratch", null, ModConstants.QuiverSlotCount, 1);
-        foreach (ItemDrop.ItemData quiver in quivers)
-        {
-            string quiverId = EnsureQuiverId(quiver);
-            Dictionary<string, string> quiverData = EnsureCustomData(quiver);
-            if (!quiverData.TryGetValue(QuiverInventory.ContentsKey, out string packed) ||
-                string.IsNullOrEmpty(packed))
-            {
-                continue;
-            }
-
-            scratch.RemoveAll();
-            try
-            {
-                scratch.Load(new ZPackage(Convert.FromBase64String(packed)));
-            }
-            catch (Exception ex)
-            {
-                FletchersForgePlugin.Log?.LogWarning($"Death dump: failed to load quiver contents: {ex.Message}");
-                continue;
-            }
-
-            List<ItemDrop.ItemData> contents = new List<ItemDrop.ItemData>(scratch.GetAllItems());
-            foreach (ItemDrop.ItemData stack in contents)
-            {
-                if (stack == null)
-                {
-                    continue;
-                }
-
-                scratch.RemoveItem(stack);
-                TagDumpStack(stack, quiverId);
-                if (!bag.AddItem(stack))
-                {
-                    PendingStacks.Add(stack);
-                }
-            }
-
-            quiverData.Remove(QuiverInventory.ContentsKey);
-            quiverData[QuiverInventory.SelectedSlotKey] = "0";
-        }
-
-        int width = Mathf.Max(1, bag.GetWidth());
-        PendingExtraRows = PendingStacks.Count <= 0
-            ? 0
-            : Mathf.CeilToInt(PendingStacks.Count / (float)width);
-
-        QuiverBackVisual.SyncOwnerZdo(player);
+        QuiverInventory.PrepareEquippedQuiverForDeath(player);
         FletchersForgePlugin.Log?.LogInfo(
-            $"Death dump: {quivers.Count} quiver(s), {PendingStacks.Count} overflow stack(s), +{PendingExtraRows} tombstone row(s).");
+            $"Death: quiver ammo left in reserved bag cells; restore-equip pending={PendingRestoreEquipIds.Count}.");
     }
 
-    internal static int GetHeight(Inventory inventory)
+    internal static void AfterMoveInventoryToGrave(Inventory playerBag)
     {
-        if (inventory == null)
+        Player player = Player.m_localPlayer;
+        if (player != null && playerBag == player.GetInventory())
         {
-            return 0;
+            QuiverInventory.ReleaseRowsAfterGrave(player);
         }
-
-        return Traverse.Create(inventory).Field<int>("m_height").Value;
     }
 
-    internal static void SetHeight(Inventory inventory, int height)
+    internal static void RequestDeferredRestore()
     {
-        if (inventory == null)
+        deferredRestoreRequested = true;
+    }
+
+    internal static void ProcessDeferredRestore()
+    {
+        if (!deferredRestoreRequested)
         {
             return;
         }
 
-        Traverse.Create(inventory).Field("m_height").SetValue(Mathf.Max(1, height));
+        deferredRestoreRequested = false;
+        Player player = Player.m_localPlayer;
+        if (player == null || !player.IsOwner() || player.IsDead())
+        {
+            return;
+        }
+
+        ItemDrop.ItemData quiver = null;
+        if (!string.IsNullOrEmpty(preferredRestoreEquipId))
+        {
+            quiver = FindQuiverById(player.GetInventory(), preferredRestoreEquipId);
+        }
+
+        if (quiver == null)
+        {
+            foreach (string id in PendingRestoreEquipIds)
+            {
+                quiver = FindQuiverById(player.GetInventory(), id);
+                if (quiver != null)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (quiver == null)
+        {
+            return;
+        }
+
+        FletchersForgePlugin.Log?.LogInfo("Deferred restore: Fletcher-equipping looted quiver and reclaiming ammo cells.");
+        deferredEquipQuiver = quiver;
+        deferredEquipRequested = true;
     }
 
-    /// Vanilla copies player height onto the grave. Bump both after AzuEPI's GetFullHeight reset.
-    internal static void BumpHeightsForPending(Inventory grave, Inventory playerBag)
+    internal static void ProcessDeferredEquip()
     {
-        if (PendingExtraRows <= 0)
+        if (!deferredEquipRequested)
         {
             return;
         }
 
-        if (grave != null)
+        deferredEquipRequested = false;
+        ItemDrop.ItemData quiver = deferredEquipQuiver;
+        deferredEquipQuiver = null;
+        Player player = Player.m_localPlayer;
+        if (player == null || player.IsDead() || quiver == null)
         {
-            SetHeight(grave, GetHeight(grave) + PendingExtraRows);
+            return;
         }
 
-        if (playerBag != null)
+        Inventory bag = player.GetInventory();
+        if (bag == null || !bag.ContainsItem(quiver))
         {
-            SetHeight(playerBag, GetHeight(playerBag) + PendingExtraRows);
+            return;
+        }
+
+        QuiverInventory.EquipOnly(player, quiver);
+
+        Dictionary<string, string> data = EnsureCustomData(quiver);
+        if (data.TryGetValue(QuiverIdKey, out string id) && !string.IsNullOrEmpty(id))
+        {
+            PendingRestoreEquipIds.Remove(id);
+            if (preferredRestoreEquipId == id)
+            {
+                preferredRestoreEquipId = null;
+            }
         }
     }
 
-    internal static void ApplyPendingExtraHeight(Container container, Inventory inventory)
-    {
-        if (PendingExtraRows <= 0 || container == null)
-        {
-            return;
-        }
+    internal static int GetHeight(Inventory inventory) => QuiverBagBridge.GetHeight(inventory);
 
-        container.m_height += PendingExtraRows;
-        if (inventory != null)
-        {
-            SetHeight(inventory, GetHeight(inventory) + PendingExtraRows);
-        }
-    }
+    internal static void SetHeight(Inventory inventory, int height) => QuiverBagBridge.SetHeight(inventory, height);
 
-    internal static void WriteHeightZdo(TombStone tomb, int absoluteHeight, int extraRows)
-    {
-        if (tomb == null || absoluteHeight <= 0)
-        {
-            return;
-        }
-
-        ZNetView nview = tomb.GetComponent<ZNetView>();
-        ZDO zdo = nview != null && nview.IsValid() ? nview.GetZDO() : null;
-        if (zdo == null || !nview.IsOwner())
-        {
-            return;
-        }
-
-        zdo.Set(AbsoluteHeightZdoHash, absoluteHeight);
-        if (extraRows > 0)
-        {
-            zdo.Set(ExtraRowsZdoHash, extraRows);
-        }
-    }
+    internal static int GetSafeTombstoneHeight(int width) => QuiverBagBridge.GetAzuOrVanillaHeight(width);
 
     internal static int ReadAbsoluteHeightZdo(TombStone tomb)
     {
-        if (tomb == null)
-        {
-            return 0;
-        }
-
-        ZNetView nview = tomb.GetComponent<ZNetView>();
-        ZDO zdo = nview != null && nview.IsValid() ? nview.GetZDO() : null;
-        if (zdo == null)
-        {
-            return 0;
-        }
-
-        return Mathf.Max(0, zdo.GetInt(AbsoluteHeightZdoHash, 0));
+        ZDO zdo = GetTombZdo(tomb);
+        return zdo == null ? 0 : Mathf.Max(0, zdo.GetInt(AbsoluteHeightZdoHash, 0));
     }
 
     internal static int ReadExtraRowsZdo(TombStone tomb)
     {
-        if (tomb == null)
-        {
-            return 0;
-        }
-
-        ZNetView nview = tomb.GetComponent<ZNetView>();
-        ZDO zdo = nview != null && nview.IsValid() ? nview.GetZDO() : null;
-        if (zdo == null)
-        {
-            return 0;
-        }
-
-        return Mathf.Max(0, zdo.GetInt(ExtraRowsZdoHash, 0));
+        ZDO zdo = GetTombZdo(tomb);
+        return zdo == null ? 0 : Mathf.Max(0, zdo.GetInt(ExtraRowsZdoHash, 0));
     }
 
-    /// After the grave list is filled, add overflow stacks into the extra rows.
-    internal static void FlushPendingIntoGrave(Inventory grave)
+    /// Legacy 0.2.11 graves taller than AzuEPI — collapse overflow.
+    internal static void SanitizeOversizedTombstone(TombStone tomb, Container container)
     {
-        if (grave == null || PendingStacks.Count == 0)
+        if (tomb == null || container == null)
         {
             return;
         }
 
-        List<ItemDrop.ItemData> still = new List<ItemDrop.ItemData>();
-        foreach (ItemDrop.ItemData stack in PendingStacks)
+        Inventory inv = container.GetInventory();
+        if (inv == null)
         {
-            if (stack == null)
+            return;
+        }
+
+        int safeHeight = GetSafeTombstoneHeight(container.m_width);
+        // While dying with equipped quiver, tombstones must include our reserved rows.
+        Player local = Player.m_localPlayer;
+        if (local != null && QuiverBagBridge.ExtraRowsActive > 0)
+        {
+            QuiverBagBridge.ApplyTombstoneHeightForPlayer(local, container);
+            safeHeight = Mathf.Max(safeHeight, QuiverBagBridge.ReservedRowStart + QuiverBagBridge.ExtraRowsActive);
+        }
+
+        int absolute = ReadAbsoluteHeightZdo(tomb);
+        if (absolute <= 0)
+        {
+            int extra = ReadExtraRowsZdo(tomb);
+            if (extra > 0)
             {
-                continue;
-            }
-
-            if (!grave.AddItem(stack))
-            {
-                still.Add(stack);
-                FletchersForgePlugin.Log?.LogWarning(
-                    $"Death dump: could not place '{stack.m_shared?.m_name}' in tombstone after height bump.");
-            }
-        }
-
-        PendingStacks.Clear();
-        PendingStacks.AddRange(still);
-    }
-
-    internal static void RestorePlayerHeightAfterDump(Inventory playerBag, int extraRows)
-    {
-        if (playerBag == null || extraRows <= 0)
-        {
-            return;
-        }
-
-        SetHeight(playerBag, Mathf.Max(4, GetHeight(playerBag) - extraRows));
-    }
-
-    internal static void TryRepackPlayerInventory(Player player)
-    {
-        if (repacking || deathDumpActive || player == null)
-        {
-            return;
-        }
-
-        Inventory bag = player.GetInventory();
-        if (bag == null)
-        {
-            return;
-        }
-
-        List<ItemDrop.ItemData> tagged = new List<ItemDrop.ItemData>();
-        foreach (ItemDrop.ItemData item in bag.GetAllItems())
-        {
-            if (item?.m_customData != null &&
-                item.m_customData.TryGetValue(DumpIdKey, out string dumpId) &&
-                !string.IsNullOrEmpty(dumpId))
-            {
-                tagged.Add(item);
+                absolute = GetSafeTombstoneHeight(container.m_width) + extra;
             }
         }
 
-        if (tagged.Count == 0)
+        int currentHeight = Mathf.Max(container.m_height, GetHeight(inv));
+        int loadHeight = Mathf.Max(currentHeight, absolute);
+        bool hasOverflowPos = false;
+        foreach (ItemDrop.ItemData item in inv.GetAllItems())
         {
-            return;
-        }
-
-        repacking = true;
-        try
-        {
-            Dictionary<string, List<ItemDrop.ItemData>> byId = new Dictionary<string, List<ItemDrop.ItemData>>();
-            foreach (ItemDrop.ItemData item in tagged)
+            if (item != null && item.m_gridPos.y >= safeHeight)
             {
-                string id = item.m_customData[DumpIdKey];
-                if (!byId.TryGetValue(id, out List<ItemDrop.ItemData> list))
-                {
-                    list = new List<ItemDrop.ItemData>();
-                    byId[id] = list;
-                }
-
-                list.Add(item);
-            }
-
-            ItemDrop.ItemData lastRepacked = null;
-            foreach (KeyValuePair<string, List<ItemDrop.ItemData>> pair in byId)
-            {
-                ItemDrop.ItemData quiver = FindQuiverById(bag, pair.Key);
-                if (quiver == null)
+                // Reserved quiver row on a matched-height grave is valid — not overflow.
+                if (local != null &&
+                    QuiverBagBridge.ExtraRowsActive > 0 &&
+                    item.m_gridPos.y < QuiverBagBridge.ReservedRowStart + QuiverBagBridge.ExtraRowsActive)
                 {
                     continue;
                 }
 
-                Inventory packed = new Inventory("FF_QuiverRepack", null, ModConstants.QuiverSlotCount, 1);
-                Dictionary<string, string> quiverData = EnsureCustomData(quiver);
-                if (quiverData.TryGetValue(QuiverInventory.ContentsKey, out string existing) &&
-                    !string.IsNullOrEmpty(existing))
-                {
-                    try
-                    {
-                        packed.Load(new ZPackage(Convert.FromBase64String(existing)));
-                    }
-                    catch (Exception ex)
-                    {
-                        FletchersForgePlugin.Log?.LogWarning($"Repack: failed to load existing contents: {ex.Message}");
-                        packed.RemoveAll();
-                    }
-                }
-
-                bool any = false;
-                foreach (ItemDrop.ItemData stack in pair.Value)
-                {
-                    bag.RemoveItem(stack);
-                    ClearDumpTag(stack);
-                    if (packed.AddItem(stack))
-                    {
-                        any = true;
-                    }
-                    else
-                    {
-                        bag.AddItem(stack);
-                        FletchersForgePlugin.Log?.LogWarning(
-                            $"Repack: quiver {pair.Key} full; left '{stack.m_shared?.m_name}' in backpack.");
-                    }
-                }
-
-                if (any)
-                {
-                    ZPackage pkg = new ZPackage();
-                    packed.Save(pkg);
-                    quiverData[QuiverInventory.ContentsKey] = Convert.ToBase64String(pkg.GetArray());
-                    lastRepacked = quiver;
-                }
-            }
-
-            if (lastRepacked != null)
-            {
-                QuiverInventory.EquipOnly(player, lastRepacked);
+                hasOverflowPos = true;
+                break;
             }
         }
-        finally
+
+        if (loadHeight <= safeHeight && !hasOverflowPos)
         {
-            repacking = false;
+            return;
         }
+
+        // Only sanitize legacy oversized graves, not matched quiver rows.
+        if (absolute <= safeHeight && !hasOverflowPos)
+        {
+            return;
+        }
+
+        if (loadHeight > currentHeight || absolute > currentHeight)
+        {
+            container.m_height = loadHeight;
+            SetHeight(inv, loadHeight);
+            ForceContainerReload(container);
+        }
+
+        List<ItemDrop.ItemData> overflow = new List<ItemDrop.ItemData>();
+        foreach (ItemDrop.ItemData item in inv.GetAllItems())
+        {
+            if (item != null && item.m_gridPos.y >= safeHeight)
+            {
+                overflow.Add(item);
+            }
+        }
+
+        foreach (ItemDrop.ItemData item in overflow)
+        {
+            inv.RemoveItem(item);
+        }
+
+        container.m_height = safeHeight;
+        SetHeight(inv, safeHeight);
+
+        int refit = 0;
+        int dropped = 0;
+        Vector3 dropPos = tomb.transform.position + Vector3.up;
+        foreach (ItemDrop.ItemData item in overflow)
+        {
+            if (inv.AddItem(item))
+            {
+                refit++;
+            }
+            else
+            {
+                ItemDrop.DropItem(item, 0, dropPos, Quaternion.identity);
+                dropped++;
+            }
+        }
+
+        FletchersForgePlugin.Log?.LogInfo(
+            $"Tombstone sanitize: safeHeight={safeHeight}, overflow={overflow.Count}, refit={refit}, dropped={dropped}.");
+    }
+
+    private static void ForceContainerReload(Container container)
+    {
+        Traverse fields = Traverse.Create(container);
+        fields.Field("m_lastRevision").SetValue(uint.MaxValue);
+        fields.Field("m_lastDataString").SetValue("__ff_force_reload__");
+        fields.Method("Load").GetValue();
+    }
+
+    private static ZDO GetTombZdo(TombStone tomb)
+    {
+        if (tomb == null)
+        {
+            return null;
+        }
+
+        ZNetView nview = tomb.GetComponent<ZNetView>();
+        return nview != null && nview.IsValid() ? nview.GetZDO() : null;
     }
 
     private static ItemDrop.ItemData FindQuiverById(Inventory bag, string id)
     {
+        if (bag == null || string.IsNullOrEmpty(id))
+        {
+            return null;
+        }
+
         foreach (ItemDrop.ItemData item in bag.GetAllItems())
         {
             if (!QuiverInventory.IsQuiverItem(item))
@@ -394,22 +337,6 @@ internal static class QuiverTombstoneDump
         }
 
         return null;
-    }
-
-    private static void TagDumpStack(ItemDrop.ItemData stack, string quiverId)
-    {
-        Dictionary<string, string> data = EnsureCustomData(stack);
-        data[DumpIdKey] = quiverId;
-    }
-
-    private static void ClearDumpTag(ItemDrop.ItemData stack)
-    {
-        if (stack?.m_customData == null)
-        {
-            return;
-        }
-
-        stack.m_customData.Remove(DumpIdKey);
     }
 
     private static Dictionary<string, string> EnsureCustomData(ItemDrop.ItemData item)

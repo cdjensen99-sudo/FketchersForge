@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.0
+
+- **Version:** First stable **1.0.0** release — Valheim **1.0** / Unity 6 compliant (API retargets for inventory, tooltips, ammo, world load).
+- **Changed:** Quiver ammo stays in the movable quiver row while equipped (does not grow the backpack height — that broke AzuEPI equipment/quick slot UI). On death only, ammo is pushed into temporary matched bag/tombstone cells so Take All works; after loot the quiver is Fletcher-equipped again and tagged ammo is reclaimed.
+- **Fixed:** Equipping no longer displaces AzuEPI equipment/quick slots or hides the quiver row.
+- **Fixed:** Quiver inventory row positioning and dark plate UI under Valheim 1.0 inventory elements.
+- **Fixed:** Fletcher-equip and ammo binding survive quit/rejoin (custom equip data is preserved across character load).
+- **Requires:** BepInExPack for Valheim 1.0 (Unity 6) and a current Jötunn build (e.g. 2.30+).
+
+## 0.2.14
+
+- **Fixed:** After tombstone loot, the quiver that was Fletcher-equipped at death is **re-equipped again** (deferred, after inventory settles) — including when all ammo stayed packed. 0.2.13 kept the safe “no extra grave rows” dump but only re-equipped when unpacked stacks were repacked; that gap is closed.
+
+## 0.2.13
+
+- **Fixed:** Take All still hard-crashed after death dump. Root cause was growing the tombstone past AzuEPI’s `GetFullHeight` (extra overflow rows). Overflow now stays packed on the quiver; only stacks that fit empty bag cells are unpacked. Old oversized 0.2.11 graves are sanitized on interact (refit or drop overflow).
+
+## 0.2.12
+
+- **Fixed:** Hard crash on tombstone Take All after a death dump. Repack/equip no longer runs inside `MoveAll`/`AddItem` (that mutated the bag mid-transfer); both are deferred to the next frame after inventory settles.
+
 ## 0.2.11
 
 - **Fixed:** Equipped quiver on the back is visible to other players in multiplayer (ZDO sync + per-player mesh).

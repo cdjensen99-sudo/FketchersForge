@@ -1,6 +1,6 @@
 param(
     [string]$ValheimPath = "D:\SteamLibrary\steamapps\common\Valheim",
-    [string]$DeployProfile = "C:\Users\cdjen\AppData\Roaming\r2modmanPlus-local\Valheim\profiles\Testing",
+    [string]$DeployProfile = "C:\Users\cdjen\AppData\Roaming\com.kesomannen.gale\valheim\profiles\New Release",
     [switch]$Deploy,
     [switch]$Package
 )

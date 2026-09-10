@@ -33,10 +33,6 @@
       <HintPath>$(ValheimManaged)\assembly_valheim.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="assembly_utils">
-      <HintPath>$(ValheimManaged)\assembly_utils.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="assembly_guiutils">
       <HintPath>$(ValheimManaged)\assembly_guiutils.dll</HintPath>
       <Private>false</Private>

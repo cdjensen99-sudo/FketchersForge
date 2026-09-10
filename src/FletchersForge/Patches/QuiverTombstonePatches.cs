@@ -8,7 +8,7 @@ internal static class QuiverTombstoneHarmonyIds
     internal const string AzuEpi = "Azumatt.AzuExtendedPlayerInventory";
 }
 
-/// Unequip + unpack packed quiver stacks before vanilla copies the bag.
+/// Leave Fletcher ammo in reserved bag cells; strip equip; keep height for grave copy.
 [HarmonyPatch(typeof(Player), nameof(Player.CreateTombStone))]
 internal static class PlayerCreateTombStoneQuiverDumpPatch
 {
@@ -24,19 +24,27 @@ internal static class PlayerCreateTombStoneQuiverDumpPatch
 }
 
 [HarmonyPatch(typeof(TombStone), "Awake")]
-internal static class TombStoneAwakeQuiverDumpPatch
+internal static class TombStoneAwakeQuiverHeightPatch
 {
     [HarmonyPostfix]
     [HarmonyAfter(new string[] { QuiverTombstoneHarmonyIds.AzuEpi })]
     private static void Postfix(TombStone __instance)
     {
-        if (__instance == null || QuiverTombstoneDump.PendingExtraRows <= 0)
+        if (__instance == null)
         {
             return;
         }
 
         Container container = __instance.GetComponent<Container>();
-        QuiverTombstoneDump.ApplyPendingExtraHeight(container, container != null ? container.GetInventory() : null);
+        Player local = Player.m_localPlayer;
+        if (local != null)
+        {
+            QuiverBagBridge.ApplyTombstoneHeightForPlayer(local, container);
+        }
+        else
+        {
+            QuiverBagBridge.ApplyTombstoneHeight(container);
+        }
     }
 }
 
@@ -47,26 +55,26 @@ internal static class MoveInventoryToGraveQuiverDumpPatch
     [HarmonyAfter(new string[] { QuiverTombstoneHarmonyIds.AzuEpi })]
     private static void Prefix(Inventory __instance, Inventory original)
     {
-        if (!IsLocalPlayerBag(original))
+        Player player = Player.m_localPlayer;
+        if (player == null || original != player.GetInventory())
         {
             return;
         }
 
-        // AzuEPI forced both to GetFullHeight; vanilla then copies original -> grave.
-        QuiverTombstoneDump.BumpHeightsForPending(__instance, original);
+        // Keep player/grave height matched when quiver bag rows are active.
+        if (QuiverBagBridge.ExtraRowsActive > 0)
+        {
+            int target = QuiverBagBridge.ReservedRowStart + QuiverBagBridge.ExtraRowsActive;
+            QuiverBagBridge.SetHeight(original, Mathf.Max(QuiverBagBridge.GetHeight(original), target));
+            QuiverBagBridge.SetHeight(__instance, Mathf.Max(QuiverBagBridge.GetHeight(__instance), target));
+        }
     }
 
     [HarmonyPostfix]
     [HarmonyAfter(new string[] { QuiverTombstoneHarmonyIds.AzuEpi })]
     private static void Postfix(Inventory __instance, Inventory original)
     {
-        if (!IsLocalPlayerBag(original))
-        {
-            return;
-        }
-
-        int extra = QuiverTombstoneDump.PendingExtraRows;
-        QuiverTombstoneDump.FlushPendingIntoGrave(__instance);
+        QuiverTombstoneDump.AfterMoveInventoryToGrave(original);
 
         TombStone tomb = FindTombStoneForInventory(__instance);
         if (tomb != null)
@@ -76,19 +84,7 @@ internal static class MoveInventoryToGraveQuiverDumpPatch
             {
                 container.m_height = QuiverTombstoneDump.GetHeight(__instance);
             }
-
-            QuiverTombstoneDump.WriteHeightZdo(tomb, QuiverTombstoneDump.GetHeight(__instance), extra);
         }
-
-        QuiverTombstoneDump.RestorePlayerHeightAfterDump(original, extra);
-        QuiverTombstoneDump.ClearPending();
-    }
-
-    private static bool IsLocalPlayerBag(Inventory original)
-    {
-        return original != null &&
-               Player.m_localPlayer != null &&
-               original == Player.m_localPlayer.GetInventory();
     }
 
     private static TombStone FindTombStoneForInventory(Inventory inventory)
@@ -119,31 +115,39 @@ internal static class TombStoneInteractQuiverDumpPatch
             return;
         }
 
-        int absolute = QuiverTombstoneDump.ReadAbsoluteHeightZdo(__instance);
-        if (absolute <= 0)
-        {
-            int extra = QuiverTombstoneDump.ReadExtraRowsZdo(__instance);
-            if (extra <= 0)
-            {
-                return;
-            }
+        QuiverTombstoneDump.SanitizeOversizedTombstone(__instance, ___m_container);
+    }
+}
 
-            absolute = ___m_container.m_height + extra;
-        }
+[HarmonyPatch(typeof(TombStone), "OnTakeAllSuccess")]
+internal static class TombStoneOnTakeAllSuccessQuiverPatch
+{
+    [HarmonyPostfix]
+    private static void Postfix()
+    {
+        QuiverTombstoneDump.RequestDeferredRestore();
+    }
+}
 
-        if (___m_container.m_height < absolute)
-        {
-            ___m_container.m_height = absolute;
-        }
+[HarmonyPatch(typeof(InventoryGui), "OnTakeAll")]
+internal static class InventoryGuiOnTakeAllQuiverLogPatch
+{
+    [HarmonyPrefix]
+    private static void Prefix(InventoryGui __instance)
+    {
+        Container container = Traverse.Create(__instance).Field<Container>("m_currentContainer").Value;
+        Inventory inv = container != null ? container.GetInventory() : null;
+        int height = inv != null ? QuiverTombstoneDump.GetHeight(inv) : -1;
+        int count = inv != null ? inv.NrOfItems() : -1;
+        FletchersForgePlugin.Log?.LogInfo(
+            $"Take All pressed: containerHeight={height}, items={count}.");
+    }
 
-        Inventory inv = ___m_container.GetInventory();
-        if (inv != null && QuiverTombstoneDump.GetHeight(inv) < absolute)
-        {
-            QuiverTombstoneDump.SetHeight(inv, absolute);
-        }
-
-        // Force Container.Load so items in extra rows are restored after the height bump.
-        Traverse.Create(___m_container).Field("m_lastRevision").SetValue(0u);
+    [HarmonyPostfix]
+    private static void Postfix()
+    {
+        FletchersForgePlugin.Log?.LogInfo("Take All MoveAll finished.");
+        QuiverTombstoneDump.RequestDeferredRestore();
     }
 }
 
@@ -156,7 +160,7 @@ internal static class InventoryMoveAllQuiverRepackPatch
         Player player = Player.m_localPlayer;
         if (player != null && __instance == player.GetInventory())
         {
-            QuiverTombstoneDump.TryRepackPlayerInventory(player);
+            QuiverTombstoneDump.RequestDeferredRestore();
         }
     }
 }
@@ -167,31 +171,37 @@ internal static class InventoryAddItemQuiverRepackPatch
     [HarmonyPostfix]
     private static void Postfix(Inventory __instance, ItemDrop.ItemData item, bool __result)
     {
-        TryRepack(__instance, item, __result);
+        TryQueueRestore(__instance, item, __result);
     }
 
-    internal static void TryRepack(Inventory inventory, ItemDrop.ItemData item, bool added)
+    internal static void TryQueueRestore(Inventory inventory, ItemDrop.ItemData item, bool added)
     {
-        if (!added || item?.m_customData == null ||
-            !item.m_customData.ContainsKey(QuiverTombstoneDump.DumpIdKey))
+        if (!added || item == null)
         {
             return;
         }
 
         Player player = Player.m_localPlayer;
-        if (player != null && inventory == player.GetInventory())
+        if (player == null || inventory != player.GetInventory())
         {
-            QuiverTombstoneDump.TryRepackPlayerInventory(player);
+            return;
+        }
+
+        bool tagged = item.m_customData != null && item.m_customData.ContainsKey(QuiverTombstoneDump.DumpIdKey);
+        bool restoreQuiver = QuiverInventory.IsQuiverItem(item) && QuiverTombstoneDump.ShouldRestoreEquipFor(item);
+        if (tagged || restoreQuiver)
+        {
+            QuiverTombstoneDump.RequestDeferredRestore();
         }
     }
 }
 
-[HarmonyPatch(typeof(Inventory), "AddItem", typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]
+[HarmonyPatch(typeof(Inventory), "AddItem", typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int), typeof(bool))]
 internal static class InventoryAddItemXYQuiverRepackPatch
 {
     [HarmonyPostfix]
     private static void Postfix(Inventory __instance, ItemDrop.ItemData item, bool __result)
     {
-        InventoryAddItemQuiverRepackPatch.TryRepack(__instance, item, __result);
+        InventoryAddItemQuiverRepackPatch.TryQueueRestore(__instance, item, __result);
     }
 }

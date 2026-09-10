@@ -25,7 +25,12 @@ internal static class FletchersKnifeTooltipPatch
     };
 
     [HarmonyPrefix]
-    [HarmonyPatch(typeof(ItemDrop.ItemData), "AddBlockTooltip")]
+    [HarmonyPatch(
+        typeof(ItemDrop.ItemData),
+        "AddBlockTooltip",
+        typeof(ItemDrop.ItemData),
+        typeof(int),
+        typeof(StringBuilder))]
     private static bool SkipBlockTooltip(ItemDrop.ItemData item)
     {
         return !FletchersKnifeHelper.IsKnife(item);
@@ -35,7 +40,7 @@ internal static class FletchersKnifeTooltipPatch
     [HarmonyPatch(
         typeof(ItemDrop.ItemData),
         nameof(ItemDrop.ItemData.GetTooltip),
-        new Type[] { typeof(ItemDrop.ItemData), typeof(int), typeof(bool), typeof(float), typeof(int) })]
+        new Type[] { typeof(ItemDrop.ItemData), typeof(int), typeof(bool), typeof(float), typeof(int), typeof(bool) })]
     private static void StripCombatLines(ItemDrop.ItemData item, ref string __result)
     {
         if (string.IsNullOrEmpty(__result) || !FletchersKnifeHelper.IsKnife(item))

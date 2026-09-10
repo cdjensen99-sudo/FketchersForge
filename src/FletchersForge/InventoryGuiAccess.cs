@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
@@ -6,8 +7,16 @@ namespace FletchersForge;
 
 internal static class InventoryGuiAccess
 {
+    // Valheim 1.0 has two SetActiveGroup overloads; unbound GetMethod throws AmbiguousMatchException
+    // and poisons this type's static initializer (floods the log from QuiverHud/Fletch UI).
     private static readonly MethodInfo SetActiveGroupMethod =
-        typeof(InventoryGui).GetMethod("SetActiveGroup", BindingFlags.Instance | BindingFlags.NonPublic);
+        AccessTools.Method(typeof(InventoryGui), "SetActiveGroup", new Type[] { typeof(int), typeof(bool) })
+        ?? typeof(InventoryGui).GetMethod(
+            "SetActiveGroup",
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
+            null,
+            new Type[] { typeof(int), typeof(bool) },
+            null);
 
     internal static void SetActiveGroup(InventoryGui gui, int index, bool playSound = false)
     {

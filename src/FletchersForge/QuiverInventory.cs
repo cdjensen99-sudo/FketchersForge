@@ -16,6 +16,8 @@ internal static class QuiverInventory
     private static Inventory inventory;
     private static ItemDrop.ItemData boundQuiver;
     private static bool saving;
+    /// True while Inventory.Load is reconstituting the bag — do not strip Fletcher-equip from saved quivers.
+    internal static bool SuppressIncomingEquipStrip;
 
     internal static Inventory Inventory
     {
@@ -50,6 +52,25 @@ internal static class QuiverInventory
 
         inventory = new Inventory("$FF_Quiver", background, ModConstants.QuiverSlotCount, 1);
         inventory.m_onChanged += OnInventoryChanged;
+    }
+
+    /// When an equipped quiver leaves the player bag (chest/ground), pack ammo onto it first.
+    internal static void PackIfEquippedQuiverLeavingPlayerBag(Inventory source, ItemDrop.ItemData item)
+    {
+        Player player = Player.m_localPlayer;
+        if (player == null || source == null || item == null)
+        {
+            return;
+        }
+
+        if (source != player.GetInventory() || !IsQuiverItem(item) || !IsEquipped(item))
+        {
+            return;
+        }
+
+        PackAndRelease(player, item);
+        QuiverHud.NotifyQuiverUnequipped();
+        QuiverBackVisual.Refresh(player);
     }
 
     internal static void SyncFromPlayer(Player player)
@@ -186,24 +207,40 @@ internal static class QuiverInventory
         return true;
     }
 
-    /// Death / tombstone retrieve: drop Fletcher equip so the grave copy is a normal item
-    /// and Take All does not bind the extra quiver inventory.
-    internal static void UnequipAllForDeath(Player player)
+    /// Death only: temporarily expose ammo as real bag cells so tombstone/Take All see them.
+    /// Does not keep bag rows while playing — that breaks AzuEPI equipment/quick UI.
+    internal static void PrepareEquippedQuiverForDeath(Player player)
     {
         if (player == null)
         {
             return;
         }
 
-        Inventory playerInventory = player.GetInventory();
-        if (playerInventory == null)
+        Inventory bag = player.GetInventory();
+        if (bag == null)
         {
             return;
         }
 
-        SaveBound();
+        ItemDrop.ItemData equipped = FindEquippedQuiver(player);
+        if (equipped != null)
+        {
+            if (boundQuiver != equipped)
+            {
+                boundQuiver = equipped;
+                LoadBound();
+            }
+
+            QuiverTombstoneDump.RememberEquippedQuiver(equipped);
+            QuiverBagBridge.EnsureRows(player);
+            QuiverBagBridge.PushUiToBag(player);
+            TagReservedAsOwned(player);
+            Dictionary<string, string> data = EnsureCustomData(equipped);
+            data.Remove(ContentsKey);
+        }
+
         bool wasBound = boundQuiver != null;
-        foreach (ItemDrop.ItemData item in playerInventory.GetAllItems())
+        foreach (ItemDrop.ItemData item in bag.GetAllItems())
         {
             if (IsQuiverItem(item) && (IsEquipped(item) || item.m_equipped))
             {
@@ -214,16 +251,35 @@ internal static class QuiverInventory
         if (wasBound)
         {
             boundQuiver = null;
-            LoadBound();
+            saving = true;
+            try
+            {
+                inventory?.RemoveAll();
+            }
+            finally
+            {
+                saving = false;
+            }
         }
 
         QuiverHud.NotifyQuiverUnequipped();
         QuiverBackVisual.Refresh(player);
     }
 
+    internal static void ReleaseRowsAfterGrave(Player player)
+    {
+        QuiverBagBridge.ReleaseRows(player);
+    }
+
     /// Incoming quiver (grave, chest, world) must not arrive Fletcher-equipped.
+    /// Skipped during Inventory.Load so a saved FF_QuiverEquipped=1 survives login.
     internal static void StripIncomingIfNewToPlayerBag(Inventory dest, ItemDrop.ItemData item)
     {
+        if (SuppressIncomingEquipStrip)
+        {
+            return;
+        }
+
         Player player = Player.m_localPlayer;
         if (player == null || dest == null || item == null || dest != player.GetInventory())
         {
@@ -238,7 +294,7 @@ internal static class QuiverInventory
         SetEquipped(item, false);
     }
 
-    /// Only one quiver may be equipped. Contents stay on each quiver item (separate custom data).
+    /// Only one quiver may be equipped. Contents stay on each quiver item when unequipped.
     private static void UnequipAllQuivers(Player player, ItemDrop.ItemData except)
     {
         Inventory playerInventory = player?.GetInventory();
@@ -252,15 +308,91 @@ internal static class QuiverInventory
             if (item != except && IsQuiverItem(item) && IsEquipped(item))
             {
                 SetEquipped(item, false);
+                if (boundQuiver == item)
+                {
+                    SaveBound();
+                    boundQuiver = null;
+                    LoadBound();
+                }
             }
         }
+    }
+
+    private static void PackAndRelease(Player player, ItemDrop.ItemData quiver)
+    {
+        if (player == null || quiver == null)
+        {
+            return;
+        }
+
+        if (boundQuiver == quiver || IsEquipped(quiver))
+        {
+            if (QuiverBagBridge.ExtraRowsActive > 0)
+            {
+                QuiverBagBridge.PullBagToUi(player);
+            }
+
+            if (boundQuiver != quiver)
+            {
+                boundQuiver = quiver;
+            }
+
+            SaveBound();
+            if (QuiverBagBridge.ExtraRowsActive > 0)
+            {
+                QuiverBagBridge.ClearReservedCells(player.GetInventory());
+                QuiverBagBridge.ReleaseRows(player);
+            }
+
+            saving = true;
+            try
+            {
+                if (boundQuiver == quiver)
+                {
+                    // keep contents saved; clear live UI binding
+                }
+            }
+            finally
+            {
+                saving = false;
+            }
+
+            boundQuiver = null;
+            LoadBound();
+        }
+
+        SetEquipped(quiver, false);
+        QuiverBagBridge.ReleaseRows(player);
     }
 
     private static void SetEquipped(ItemDrop.ItemData item, bool equipped)
     {
         Dictionary<string, string> data = EnsureCustomData(item);
         data[EquippedKey] = equipped ? "1" : "0";
-        item.m_equipped = equipped;
+        // Fletcher equip lives in custom data only. Persisting m_equipped=true makes vanilla
+        // EquipInventoryItems() call EquipItem on login, fail (we block it), and clear m_equipped.
+        if (!equipped)
+        {
+            item.m_equipped = false;
+        }
+    }
+
+    /// Clear vanilla m_equipped on quivers before character save so login does not treat them as gear.
+    internal static void ClearVanillaEquippedFlags(Player player)
+    {
+        Inventory bag = player?.GetInventory();
+        if (bag == null)
+        {
+            return;
+        }
+
+        foreach (ItemDrop.ItemData item in bag.GetAllItems())
+        {
+            if (IsQuiverItem(item))
+            {
+                item.m_equipped = false;
+            }
+        }
     }
 
     internal static void SetEquippedPublic(ItemDrop.ItemData item, bool equipped)
@@ -273,7 +405,7 @@ internal static class QuiverInventory
         SetEquipped(item, equipped);
     }
 
-    /// After tombstone repack: only one Fletcher-equipped quiver.
+    /// After tombstone loot: Fletcher-equip and move tagged ammo back into the quiver UI / packed data.
     internal static void EquipOnly(Player player, ItemDrop.ItemData quiver)
     {
         if (player == null || !IsQuiverItem(quiver))
@@ -283,9 +415,74 @@ internal static class QuiverInventory
 
         UnequipAllQuivers(player, except: quiver);
         SetEquipped(quiver, true);
-        SyncFromPlayer(player);
+        boundQuiver = quiver;
+        LoadBound();
+        ClaimTaggedAmmoIntoUi(player, quiver);
+        SaveBound();
         QuiverHud.NotifyQuiverEquipped();
         QuiverBackVisual.Refresh(player);
+    }
+
+    private static void TagReservedAsOwned(Player player)
+    {
+        if (player == null || QuiverBagBridge.ExtraRowsActive <= 0)
+        {
+            return;
+        }
+
+        ItemDrop.ItemData owner = boundQuiver ?? FindEquippedQuiver(player);
+        if (owner == null)
+        {
+            return;
+        }
+
+        string id = QuiverTombstoneDump.EnsureQuiverId(owner);
+        Inventory bag = player.GetInventory();
+        if (bag == null)
+        {
+            return;
+        }
+
+        foreach (ItemDrop.ItemData item in bag.GetAllItems())
+        {
+            if (item != null && QuiverBagBridge.IsReservedCell(item.m_gridPos))
+            {
+                EnsureCustomData(item)[QuiverTombstoneDump.DumpIdKey] = id;
+            }
+        }
+    }
+
+    private static void ClaimTaggedAmmoIntoUi(Player player, ItemDrop.ItemData quiver)
+    {
+        Inventory bag = player?.GetInventory();
+        if (bag == null || quiver == null || inventory == null)
+        {
+            return;
+        }
+
+        string id = QuiverTombstoneDump.EnsureQuiverId(quiver);
+        List<ItemDrop.ItemData> tagged = new List<ItemDrop.ItemData>();
+        foreach (ItemDrop.ItemData item in bag.GetAllItems())
+        {
+            if (item?.m_customData != null &&
+                item.m_customData.TryGetValue(QuiverTombstoneDump.DumpIdKey, out string dumpId) &&
+                dumpId == id)
+            {
+                tagged.Add(item);
+            }
+        }
+
+        foreach (ItemDrop.ItemData item in tagged)
+        {
+            bag.RemoveItem(item);
+            item.m_customData?.Remove(QuiverTombstoneDump.DumpIdKey);
+            if (!inventory.AddItem(item))
+            {
+                bag.AddItem(item);
+                FletchersForgePlugin.Log?.LogWarning(
+                    $"Restore: quiver full; left '{item.m_shared?.m_name}' in backpack.");
+            }
+        }
     }
 
     internal static bool Contains(ItemDrop.ItemData item)
@@ -387,7 +584,7 @@ internal static class QuiverInventory
         Player player = Player.m_localPlayer;
         if (player == null)
         {
-            return inventory == null || inventory.IsTeleportable();
+            return inventory == null || inventory.IsTeleportable(false);
         }
 
         Inventory playerInventory = player.GetInventory();
@@ -405,7 +602,7 @@ internal static class QuiverInventory
 
             if (item == boundQuiver && inventory != null)
             {
-                if (!inventory.IsTeleportable())
+                if (!inventory.IsTeleportable(false))
                 {
                     return false;
                 }
@@ -652,7 +849,7 @@ internal static class QuiverInventory
             return true;
         }
 
-        return weightProbe.IsTeleportable();
+        return weightProbe.IsTeleportable(false);
     }
 
     private static bool TryLoadStoredContents(ItemDrop.ItemData quiver, Inventory probe)
@@ -734,9 +931,11 @@ internal static class QuiverInventory
 
     private static void OnInventoryChanged()
     {
-        if (!saving)
+        if (saving || QuiverBagBridge.IsSyncing)
         {
-            SaveBound();
+            return;
         }
+
+        SaveBound();
     }
 }

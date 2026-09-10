@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
-using Jotunn.Managers;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -249,12 +248,23 @@ internal static class QuiverHud
 
     private static void UpdateGrid(InventoryGrid grid, Player player)
     {
+        if (grid == null)
+        {
+            return;
+        }
+
+        if (grid.CanDropDragOntoItem == null)
+        {
+            grid.CanDropDragOntoItem = _ => true;
+        }
+
         InventoryGui gui = InventoryGui.instance;
         ItemDrop.ItemData dragItem = gui != null ? InventoryGuiAccess.GetDragItem(gui) : null;
         try
         {
             grid.UpdateInventory(QuiverInventory.Inventory, player, dragItem);
             SetSlotBindingsAndSelection(grid);
+            updateErrorLogged = false;
         }
         catch (Exception ex)
         {
@@ -377,34 +387,39 @@ internal static class QuiverHud
             return false;
         }
 
-        if (!TryGetBackpackDockSlot(playerGrid, out RectTransform slot))
-        {
-            return false;
-        }
-
         RectTransform invRect = invRoot.transform as RectTransform;
         if (invRect == null)
         {
             return false;
         }
 
-        Transform dock = slot.parent != null ? slot.parent.parent : playerGrid.transform;
-        if (dock == null)
+        bool hasCustom = ModConfig.QuiverInvCustomPosition != null && ModConfig.QuiverInvCustomPosition.Value;
+        bool hasDock = TryGetBackpackDockSlot(playerGrid, out RectTransform slot);
+        if (!hasDock && !hasCustom)
         {
-            dock = playerGrid.transform;
+            return false;
         }
 
-        for (Transform current = dock; current != null; current = current.parent)
+        if (hasDock)
         {
-            if (current.GetComponent<RectMask2D>() != null || current.GetComponent<Mask>() != null)
+            Transform dock = slot.parent != null ? slot.parent.parent : playerGrid.transform;
+            if (dock == null)
             {
-                dock = current.parent != null ? current.parent : current;
+                dock = playerGrid.transform;
             }
-        }
 
-        if (invRoot.transform.parent != dock)
-        {
-            invRoot.transform.SetParent(dock, false);
+            for (Transform current = dock; current != null; current = current.parent)
+            {
+                if (current.GetComponent<RectMask2D>() != null || current.GetComponent<Mask>() != null)
+                {
+                    dock = current.parent != null ? current.parent : current;
+                }
+            }
+
+            if (invRoot.transform.parent != dock)
+            {
+                invRoot.transform.SetParent(dock, false);
+            }
         }
 
         float space = playerGrid.m_elementSpace;
@@ -415,7 +430,7 @@ internal static class QuiverHud
 
         if (!invDragging)
         {
-            if (ModConfig.QuiverInvCustomPosition != null && ModConfig.QuiverInvCustomPosition.Value)
+            if (hasCustom)
             {
                 invRect.anchoredPosition = new Vector2(
                     ModConfig.QuiverInvPosX.Value,
@@ -441,23 +456,15 @@ internal static class QuiverHud
 
     private static void PlaceInventoryBackground(RectTransform invRect, float space)
     {
-        if (invRect == null)
+        if (invRect == null || invRoot == null)
         {
             return;
         }
 
-        Image source = FindPlayerWoodpanel(InventoryGui.instance);
-        Sprite sprite = source?.sprite;
-        if (sprite == null || sprite.name.IndexOf("woodpanel", StringComparison.OrdinalIgnoreCase) < 0)
-        {
-            sprite = GUIManager.Instance?.GetSprite("woodpanel_playerinventory")
-                     ?? GUIManager.Instance?.GetSprite("inv_bkg");
-        }
-
-        if (sprite == null)
-        {
-            return;
-        }
+        // The woodpanel_* sprite renders as a solid yellow silhouette on this custom row in 1.0
+        // (texture never samples correctly outside the vanilla inventory Image setup).
+        // Use a plain dark plate so slots keep their normal inventory look.
+        DestroyLegacyYellowChrome();
 
         if (invBkg == null)
         {
@@ -465,71 +472,60 @@ internal static class QuiverHud
             go.transform.SetParent(invRoot.transform, false);
             invBkg = go.GetComponent<Image>();
             invBkg.raycastTarget = false;
+            invBkg.sprite = null;
+            invBkg.material = null;
+            // Match the dark recessed inventory tray, not the wood border texture.
+            invBkg.color = new Color(0.14f, 0.11f, 0.09f, 0.94f);
         }
 
         invBkg.transform.SetAsFirstSibling();
-        invBkg.sprite = sprite;
-        invBkg.type = Image.Type.Sliced;
-        invBkg.fillCenter = true;
-        invBkg.color = Color.white;
-        invBkg.pixelsPerUnitMultiplier = source != null ? source.pixelsPerUnitMultiplier : 1f;
-        Material litpanel = source != null ? source.material : PrefabManager.Cache.GetPrefab<Material>("litpanel");
-        if (litpanel != null)
-        {
-            invBkg.material = litpanel;
-        }
+        invBkg.enabled = true;
 
-        float pad = space * 0.16f;
-
+        float padX = space * 0.12f;
+        float padY = space * 0.10f;
         RectTransform bkgRect = invBkg.rectTransform;
+        bkgRect.localScale = Vector3.one;
         bkgRect.anchorMin = new Vector2(0f, 1f);
         bkgRect.anchorMax = new Vector2(0f, 1f);
         bkgRect.pivot = new Vector2(0f, 1f);
-        bkgRect.anchoredPosition = new Vector2(-pad, pad);
+        bkgRect.anchoredPosition = new Vector2(-padX, padY);
         bkgRect.sizeDelta = new Vector2(
-            invRect.sizeDelta.x + (pad * 2f),
-            invRect.sizeDelta.y + (pad * 2f));
+            invRect.sizeDelta.x + (padX * 2f),
+            invRect.sizeDelta.y + (padY * 2f));
     }
 
-    private static Image FindPlayerWoodpanel(InventoryGui gui)
+    private static void DestroyLegacyYellowChrome()
     {
-        if (gui?.m_player == null)
+        if (invRoot == null)
         {
-            return null;
+            return;
         }
 
-        Image best = null;
-        int bestScore = -1;
-        foreach (Image image in gui.m_player.GetComponentsInChildren<Image>(true))
+        for (int i = invRoot.transform.childCount - 1; i >= 0; i--)
         {
-            if (image?.sprite == null || image.GetComponentInParent<InventoryGrid>() != null)
+            Transform child = invRoot.transform.GetChild(i);
+            if (child == null || !child.name.StartsWith("FF_QuiverInvBkg", StringComparison.Ordinal))
             {
                 continue;
             }
 
-            string name = image.sprite.name;
-            int score = 0;
-            if (name.IndexOf("woodpanel_playerinventory", StringComparison.OrdinalIgnoreCase) >= 0)
+            // Keep the current plain plate; remove clones / old woodpanel Images.
+            if (invBkg != null && child.gameObject == invBkg.gameObject)
             {
-                score = 3;
-            }
-            else if (name.IndexOf("woodpanel", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                score = 2;
-            }
-            else if (name.IndexOf("inv_bkg", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                score = 1;
+                continue;
             }
 
-            if (score > bestScore)
-            {
-                bestScore = score;
-                best = image;
-            }
+            UnityEngine.Object.Destroy(child.gameObject);
         }
 
-        return bestScore > 0 ? best : null;
+        // If the kept plate is still a woodpanel Image, replace it.
+        if (invBkg != null &&
+            invBkg.sprite != null &&
+            invBkg.sprite.name.IndexOf("woodpanel", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            UnityEngine.Object.Destroy(invBkg.gameObject);
+            invBkg = null;
+        }
     }
 
     /// Bottom-left cell of the 8-column backpack (row 0, col 0 is the hotbar). Ignores extra slots that sit to the right.
@@ -601,6 +597,15 @@ internal static class QuiverHud
             return false;
         }
 
+        // Valheim 1.0: InventoryElement is a MonoBehaviour on the slot object.
+        if (element is InventoryElement invElement)
+        {
+            pos = invElement.Position;
+            rect = invElement.transform as RectTransform;
+            return rect != null;
+        }
+
+        // Pre-1.0 element shape (m_pos + m_go).
         Traverse fields = Traverse.Create(element);
         pos = fields.Field("m_pos").GetValue<Vector2i>();
         GameObject go = fields.Field("m_go").GetValue<GameObject>();
@@ -672,6 +677,13 @@ internal static class QuiverHud
         }
 
         boundGrids.Add(grid);
+
+        // Valheim 1.0 UpdateGui always invokes this; vanilla grids get it in InventoryGui.Awake.
+        // Leaving it null NREs after the first occupied slot and leaves the rest in broken prefab visuals.
+        if (grid.CanDropDragOntoItem == null)
+        {
+            grid.CanDropDragOntoItem = _ => true;
+        }
 
         grid.m_onSelected += (InventoryGrid selectedGrid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod) =>
         {

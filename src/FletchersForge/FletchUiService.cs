@@ -177,8 +177,17 @@ internal static class FletchUiService
         int found = 0;
         foreach (object element in elements)
         {
-            GameObject go = Traverse.Create(element).Field("m_go").GetValue<GameObject>();
-            RectTransform slot = go != null ? go.transform as RectTransform : null;
+            RectTransform slot = null;
+            if (element is InventoryElement invElement)
+            {
+                slot = invElement.transform as RectTransform;
+            }
+            else
+            {
+                GameObject go = Traverse.Create(element).Field("m_go").GetValue<GameObject>();
+                slot = go != null ? go.transform as RectTransform : null;
+            }
+
             if (slot == null)
             {
                 continue;

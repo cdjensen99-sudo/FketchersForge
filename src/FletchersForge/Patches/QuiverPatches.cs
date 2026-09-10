@@ -3,6 +3,26 @@ using UnityEngine;
 
 namespace FletchersForge.Patches;
 
+[HarmonyPatch(typeof(Inventory), nameof(Inventory.RemoveItem), typeof(ItemDrop.ItemData))]
+internal static class InventoryRemoveItemQuiverPackPatch
+{
+    [HarmonyPrefix]
+    private static void Prefix(Inventory __instance, ItemDrop.ItemData item)
+    {
+        QuiverInventory.PackIfEquippedQuiverLeavingPlayerBag(__instance, item);
+    }
+}
+
+[HarmonyPatch(typeof(Inventory), nameof(Inventory.RemoveItem), typeof(ItemDrop.ItemData), typeof(int))]
+internal static class InventoryRemoveItemAmountQuiverPackPatch
+{
+    [HarmonyPrefix]
+    private static void Prefix(Inventory __instance, ItemDrop.ItemData item)
+    {
+        QuiverInventory.PackIfEquippedQuiverLeavingPlayerBag(__instance, item);
+    }
+}
+
 [HarmonyPatch(typeof(Player), nameof(Player.Save))]
 internal static class PlayerSaveQuiverPatch
 {
@@ -13,7 +33,41 @@ internal static class PlayerSaveQuiverPatch
         {
             QuiverInventory.SyncFromPlayer(__instance);
             QuiverInventory.SaveBound();
+            // Persist Fletcher equip only via FF_QuiverEquipped custom data.
+            QuiverInventory.ClearVanillaEquippedFlags(__instance);
         }
+    }
+}
+
+[HarmonyPatch(typeof(Inventory), nameof(Inventory.Load), typeof(ZPackage))]
+internal static class InventoryLoadQuiverEquipPatch
+{
+    [HarmonyPrefix]
+    private static void Prefix()
+    {
+        QuiverInventory.SuppressIncomingEquipStrip = true;
+    }
+
+    [HarmonyPostfix]
+    private static void Postfix()
+    {
+        QuiverInventory.SuppressIncomingEquipStrip = false;
+    }
+}
+
+[HarmonyPatch(typeof(Inventory), nameof(Inventory.Load), typeof(ZPackage), typeof(bool))]
+internal static class InventoryLoadBoolQuiverEquipPatch
+{
+    [HarmonyPrefix]
+    private static void Prefix()
+    {
+        QuiverInventory.SuppressIncomingEquipStrip = true;
+    }
+
+    [HarmonyPostfix]
+    private static void Postfix()
+    {
+        QuiverInventory.SuppressIncomingEquipStrip = false;
     }
 }
 
@@ -181,13 +235,13 @@ internal static class InventoryWeightQuiverPatch
     }
 }
 
-[HarmonyPatch(typeof(Inventory), nameof(Inventory.IsTeleportable))]
+[HarmonyPatch(typeof(Inventory), nameof(Inventory.IsTeleportable), typeof(bool))]
 internal static class InventoryTeleportableQuiverPatch
 {
     [HarmonyPostfix]
-    private static void Postfix(Inventory __instance, ref bool __result)
+    private static void Postfix(Inventory __instance, bool allowAllItems, ref bool __result)
     {
-        if (!__result)
+        if (!__result || allowAllItems)
         {
             return;
         }
@@ -260,7 +314,7 @@ internal static class InventoryAddItemNoPosQuiverPatch
     }
 }
 
-[HarmonyPatch(typeof(Inventory), "AddItem", typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]
+[HarmonyPatch(typeof(Inventory), "AddItem", typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int), typeof(bool))]
 internal static class InventoryAddItemXYQuiverPatch
 {
     [HarmonyPrefix]

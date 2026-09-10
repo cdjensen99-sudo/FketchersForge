@@ -1,10 +1,10 @@
 {
   "name": "FletchersForge",
-  "version_number": "0.2.11",
+  "version_number": "1.0.0",
   "website_url": "https://github.com/cdjensen99-sudo/FketchersForge",
   "description": "Craft arrow shafts and heads, reforge in the field with the Fletcher's knife, and carry ammo in a custom quiver.",
   "dependencies": [
-    "denikson-BepInExPack_Valheim-5.4.2202",
-    "ValheimModding-Jotunn-2.26.0"
+    "denikson-BepInExPack_Valheim-5.4.2350",
+    "ValheimModding-Jotunn-2.30.0"
   ]
 }
