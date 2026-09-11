@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace FletchersForge;
 
-/// Death: keep Fletcher ammo in reserved real bag cells so tombstone/Take All are vanilla.
-/// Loot: Fletcher-equip the remembered quiver and reclaim tagged stacks into reserved cells.
+/// Death: pack ammo onto the quiver and Fletcher-unequip (AzuEPI-safe, no bag growth).
+/// Legacy oversized graves are still sanitized on interact.
 internal static class QuiverTombstoneDump
 {
     internal const string QuiverIdKey = "FF_QuiverId";
@@ -19,9 +19,6 @@ internal static class QuiverTombstoneDump
 
     private static readonly HashSet<string> PendingRestoreEquipIds = new HashSet<string>();
     private static string preferredRestoreEquipId;
-    private static bool deferredRestoreRequested;
-    private static bool deferredEquipRequested;
-    private static ItemDrop.ItemData deferredEquipQuiver;
 
     internal static void ClearPending()
     {
@@ -55,18 +52,11 @@ internal static class QuiverTombstoneDump
 
     internal static bool ShouldRestoreEquipFor(ItemDrop.ItemData quiver)
     {
-        if (!QuiverInventory.IsQuiverItem(quiver) || PendingRestoreEquipIds.Count == 0)
-        {
-            return false;
-        }
-
-        Dictionary<string, string> data = EnsureCustomData(quiver);
-        return data.TryGetValue(QuiverIdKey, out string id) &&
-               !string.IsNullOrEmpty(id) &&
-               PendingRestoreEquipIds.Contains(id);
+        // Auto re-equip after Take All is disabled (AzuEPI crash + unequip-on-death).
+        return false;
     }
 
-    /// Push ammo into reserved bag cells, strip Fletcher equip, keep height until grave copy.
+    /// Pack+unequip before grave copy. No reserved-row dump (AzuEPI-safe).
     internal static void PreparePlayerDeathDump(Player player)
     {
         if (player == null)
@@ -75,8 +65,7 @@ internal static class QuiverTombstoneDump
         }
 
         QuiverInventory.PrepareEquippedQuiverForDeath(player);
-        FletchersForgePlugin.Log?.LogInfo(
-            $"Death: quiver ammo left in reserved bag cells; restore-equip pending={PendingRestoreEquipIds.Count}.");
+        ClearPending();
     }
 
     internal static void AfterMoveInventoryToGrave(Inventory playerBag)
@@ -90,84 +79,16 @@ internal static class QuiverTombstoneDump
 
     internal static void RequestDeferredRestore()
     {
-        deferredRestoreRequested = true;
+        // Intentionally ignored: auto re-equip after Take All crashes with AzuEPI
+        // and undoes unequip-on-death. Ammo stays packed on the quiver until RMB equip.
     }
 
     internal static void ProcessDeferredRestore()
     {
-        if (!deferredRestoreRequested)
-        {
-            return;
-        }
-
-        deferredRestoreRequested = false;
-        Player player = Player.m_localPlayer;
-        if (player == null || !player.IsOwner() || player.IsDead())
-        {
-            return;
-        }
-
-        ItemDrop.ItemData quiver = null;
-        if (!string.IsNullOrEmpty(preferredRestoreEquipId))
-        {
-            quiver = FindQuiverById(player.GetInventory(), preferredRestoreEquipId);
-        }
-
-        if (quiver == null)
-        {
-            foreach (string id in PendingRestoreEquipIds)
-            {
-                quiver = FindQuiverById(player.GetInventory(), id);
-                if (quiver != null)
-                {
-                    break;
-                }
-            }
-        }
-
-        if (quiver == null)
-        {
-            return;
-        }
-
-        FletchersForgePlugin.Log?.LogInfo("Deferred restore: Fletcher-equipping looted quiver and reclaiming ammo cells.");
-        deferredEquipQuiver = quiver;
-        deferredEquipRequested = true;
     }
 
     internal static void ProcessDeferredEquip()
     {
-        if (!deferredEquipRequested)
-        {
-            return;
-        }
-
-        deferredEquipRequested = false;
-        ItemDrop.ItemData quiver = deferredEquipQuiver;
-        deferredEquipQuiver = null;
-        Player player = Player.m_localPlayer;
-        if (player == null || player.IsDead() || quiver == null)
-        {
-            return;
-        }
-
-        Inventory bag = player.GetInventory();
-        if (bag == null || !bag.ContainsItem(quiver))
-        {
-            return;
-        }
-
-        QuiverInventory.EquipOnly(player, quiver);
-
-        Dictionary<string, string> data = EnsureCustomData(quiver);
-        if (data.TryGetValue(QuiverIdKey, out string id) && !string.IsNullOrEmpty(id))
-        {
-            PendingRestoreEquipIds.Remove(id);
-            if (preferredRestoreEquipId == id)
-            {
-                preferredRestoreEquipId = null;
-            }
-        }
     }
 
     internal static int GetHeight(Inventory inventory) => QuiverBagBridge.GetHeight(inventory);
@@ -203,14 +124,6 @@ internal static class QuiverTombstoneDump
         }
 
         int safeHeight = GetSafeTombstoneHeight(container.m_width);
-        // While dying with equipped quiver, tombstones must include our reserved rows.
-        Player local = Player.m_localPlayer;
-        if (local != null && QuiverBagBridge.ExtraRowsActive > 0)
-        {
-            QuiverBagBridge.ApplyTombstoneHeightForPlayer(local, container);
-            safeHeight = Mathf.Max(safeHeight, QuiverBagBridge.ReservedRowStart + QuiverBagBridge.ExtraRowsActive);
-        }
-
         int absolute = ReadAbsoluteHeightZdo(tomb);
         if (absolute <= 0)
         {
@@ -228,14 +141,6 @@ internal static class QuiverTombstoneDump
         {
             if (item != null && item.m_gridPos.y >= safeHeight)
             {
-                // Reserved quiver row on a matched-height grave is valid — not overflow.
-                if (local != null &&
-                    QuiverBagBridge.ExtraRowsActive > 0 &&
-                    item.m_gridPos.y < QuiverBagBridge.ReservedRowStart + QuiverBagBridge.ExtraRowsActive)
-                {
-                    continue;
-                }
-
                 hasOverflowPos = true;
                 break;
             }
@@ -246,7 +151,7 @@ internal static class QuiverTombstoneDump
             return;
         }
 
-        // Only sanitize legacy oversized graves, not matched quiver rows.
+        // Only sanitize legacy oversized graves (never grow past AzuEPI safe height).
         if (absolute <= safeHeight && !hasOverflowPos)
         {
             return;

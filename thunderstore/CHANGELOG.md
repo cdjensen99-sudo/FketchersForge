@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- **Fix:** Fatal crash when used with AzuEPI.
+- **Changed:** On death the quiver is packed and Fletcher-unequipped; after looting the tombstone it stays unequipped until you right-click it again.
+
 ## 1.0.0
 
 - **Version:** First stable **1.0.0** release — Valheim **1.0** / Unity 6 compliant (API retargets for inventory, tooltips, ammo, world load).

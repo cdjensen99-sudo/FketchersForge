@@ -10,7 +10,7 @@
     <BepInExCore>$(BepInExPath)\core</BepInExCore>
     <JotunnPath Condition="'$(JotunnPath)' == ''">$(GaleProfile)\BepInEx\plugins\ValheimModding-Jotunn\Jotunn.dll</JotunnPath>
 
-    <ModVersion>1.0.0</ModVersion>
+    <ModVersion>1.0.1</ModVersion>
     <ModDeployDir>$(GaleProfile)\BepInEx\plugins\Hardwire99-FletchersForge</ModDeployDir>
   </PropertyGroup>
 </Project>

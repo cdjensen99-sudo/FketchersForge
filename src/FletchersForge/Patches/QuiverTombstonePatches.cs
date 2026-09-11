@@ -8,9 +8,24 @@ internal static class QuiverTombstoneHarmonyIds
     internal const string AzuEpi = "Azumatt.AzuExtendedPlayerInventory";
 }
 
-/// Leave Fletcher ammo in reserved bag cells; strip equip; keep height for grave copy.
+/// Pack+unequip before grave copy. Keep height matched only if legacy reserved rows were somehow active.
 [HarmonyPatch(typeof(Player), nameof(Player.CreateTombStone))]
 internal static class PlayerCreateTombStoneQuiverDumpPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPriority(Priority.First)]
+    private static void Prefix(Player __instance)
+    {
+        if (__instance != null && __instance.IsOwner())
+        {
+            QuiverTombstoneDump.PreparePlayerDeathDump(__instance);
+        }
+    }
+}
+
+/// Earlier than CreateTombStone so equip state is cleared even if tombstone creation is delayed.
+[HarmonyPatch(typeof(Player), "OnDeath")]
+internal static class PlayerOnDeathQuiverUnequipPatch
 {
     [HarmonyPrefix]
     [HarmonyPriority(Priority.First)]

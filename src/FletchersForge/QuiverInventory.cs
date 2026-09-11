@@ -207,8 +207,8 @@ internal static class QuiverInventory
         return true;
     }
 
-    /// Death only: temporarily expose ammo as real bag cells so tombstone/Take All see them.
-    /// Does not keep bag rows while playing — that breaks AzuEPI equipment/quick UI.
+    /// Death: pack ammo onto the quiver and Fletcher-unequip before the grave copy.
+    /// Do not grow the bag / tombstone past AzuEPI GetFullHeight — that hard-crashes Take All.
     internal static void PrepareEquippedQuiverForDeath(Player player)
     {
         if (player == null)
@@ -231,37 +231,22 @@ internal static class QuiverInventory
                 LoadBound();
             }
 
-            QuiverTombstoneDump.RememberEquippedQuiver(equipped);
-            QuiverBagBridge.EnsureRows(player);
-            QuiverBagBridge.PushUiToBag(player);
-            TagReservedAsOwned(player);
-            Dictionary<string, string> data = EnsureCustomData(equipped);
-            data.Remove(ContentsKey);
+            PackAndRelease(player, equipped);
+            FletchersForgePlugin.Log?.LogInfo(
+                "Death: packed quiver ammo onto item and Fletcher-unequipped (no bag-height growth).");
         }
-
-        bool wasBound = boundQuiver != null;
-        foreach (ItemDrop.ItemData item in bag.GetAllItems())
+        else
         {
-            if (IsQuiverItem(item) && (IsEquipped(item) || item.m_equipped))
+            foreach (ItemDrop.ItemData item in bag.GetAllItems())
             {
-                SetEquipped(item, false);
+                if (IsQuiverItem(item) && (IsEquipped(item) || item.m_equipped))
+                {
+                    SetEquipped(item, false);
+                }
             }
         }
 
-        if (wasBound)
-        {
-            boundQuiver = null;
-            saving = true;
-            try
-            {
-                inventory?.RemoveAll();
-            }
-            finally
-            {
-                saving = false;
-            }
-        }
-
+        QuiverTombstoneDump.ClearPending();
         QuiverHud.NotifyQuiverUnequipped();
         QuiverBackVisual.Refresh(player);
     }

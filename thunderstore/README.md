@@ -2,7 +2,7 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 1.0.0  
+**Current version:** 1.0.1  
 **Requires:** Valheim 1.0+, BepInExPack (Unity 6), and Jötunn
 
 **Links**
@@ -125,9 +125,9 @@ While inventory is open, the quiver row starts under the backpack. Drag the **le
 
 ### Death and tombstone
 
-If you die while a quiver is **Fletcher-equipped**, ammo is briefly moved into temporary real bag/tombstone cells (height matched with AzuEPI) so Take All works, then after loot the quiver is **Fletcher-equipped** again and that ammo is reclaimed into the movable quiver row. While alive and equipped, ammo stays in the quiver row UI (not by growing the backpack — that broke AzuEPI’s equipment box). Unequipping or putting the quiver in a chest keeps ammo packed on the quiver item.
+If you die while a quiver is **Fletcher-equipped**, it is **unequipped** and its ammo is **packed onto the quiver item** before the grave is created (no extra backpack/tombstone rows — growing those breaks Take All with AzuEPI). After you loot the tombstone, the quiver stays **unequipped** until you right-click it again; packed ammo returns when you equip it.
 
-Extra tombstone height is applied **after** AzuExtendedPlayerInventory’s `GetFullHeight` when that mod is present (`HarmonyAfter`), and the same path works in vanilla without it.
+Extra tombstone height sanitization still applies for older oversized graves when AzuExtendedPlayerInventory is present (`HarmonyAfter`), and the same path works in vanilla without it.
 
 ### Multiplayer back visual
 
