@@ -25,6 +25,14 @@ internal static class RecipeRegistrar
             new RequirementConfig("Blackwood", 8),
             new RequirementConfig("Feathers", 2));
 
+        // Deep North timberwood shaft — Black Forge matches Bloodgold arrow station.
+        RegisterShaftRecipeAt(
+            ModConstants.ShaftTimber,
+            CraftingStations.BlackForge,
+            1,
+            new RequirementConfig("Frostwood", 8),
+            new RequirementConfig("Feathers", 2));
+
         RegisterHeadRecipe(ModConstants.HeadFire, CraftingStations.Workbench, 2, new RequirementConfig("Resin", 8));
         RegisterHeadRecipe(ModConstants.HeadFlint, CraftingStations.Workbench, 2, new RequirementConfig("Flint", 2));
         RegisterHeadRecipe(ModConstants.HeadBronze, CraftingStations.Forge, 1, new RequirementConfig("Bronze", 1));
@@ -46,6 +54,8 @@ internal static class RecipeRegistrar
         RegisterHeadRecipe(ModConstants.HeadNeedle, CraftingStations.Workbench, 4, new RequirementConfig("Needle", 4));
         RegisterHeadRecipe(ModConstants.HeadCarapace, CraftingStations.BlackForge, 1, new RequirementConfig("Carapace", 4));
         RegisterHeadRecipe(ModConstants.HeadCharred, CraftingStations.BlackForge, 3, new RequirementConfig("CharredBone", 4));
+        // Bloodgold bar prefab is "Gold"; Timberwood is "Frostwood".
+        RegisterHeadRecipe(ModConstants.HeadBloodGold, CraftingStations.BlackForge, 1, new RequirementConfig("Gold", 1));
 
         RegisterKnifeRecipe();
         RegisterQuiverRecipe();
@@ -53,12 +63,21 @@ internal static class RecipeRegistrar
 
     private static void RegisterShaftRecipe(string item, int minLevel, params RequirementConfig[] requirements)
     {
+        RegisterShaftRecipeAt(item, CraftingStations.Workbench, minLevel, requirements);
+    }
+
+    private static void RegisterShaftRecipeAt(
+        string item,
+        string station,
+        int minLevel,
+        params RequirementConfig[] requirements)
+    {
         var config = new RecipeConfig
         {
             Name = $"Recipe_{item}",
             Item = item,
             Amount = ModConstants.BatchSize,
-            CraftingStation = CraftingStations.Workbench,
+            CraftingStation = station,
             MinStationLevel = minLevel,
             Requirements = requirements,
         };

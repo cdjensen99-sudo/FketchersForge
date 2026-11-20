@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2
+
+- **Added:** Deep North / Far North support — Bloodgold arrows (`ArrowBloodGold`), Bloodgold bolts (`BoltBloodGold`), Timberwood shafts, and Bloodgold arrowheads (icon included).
+- **Fixed:** Stutter / low FPS while carrying an unequipped quiver with packed ammo (issue #1 — cached packed-contents weight instead of deserializing on every `GetTotalWeight` call).
+
 ## 1.0.1
 
 - **Fix:** Fatal crash when used with AzuEPI.

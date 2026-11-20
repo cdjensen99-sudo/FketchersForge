@@ -19,6 +19,7 @@ internal static class HeadIconGenerator
         { "ArrowNeedle", new Color(0.68f, 0.70f, 0.74f) },
         { "ArrowCarapace", new Color(0.58f, 0.32f, 0.62f) },
         { "ArrowCharred", new Color(0.18f, 0.18f, 0.20f) },
+        { "ArrowBloodGold", new Color(0.78f, 0.18f, 0.22f) },
     };
 
     internal static Sprite CreateForArrow(string sourceArrow)

@@ -2,7 +2,7 @@
 
 Disassemble vanilla arrows into **shafts** and **arrowheads**, craft components at vanilla stations, **reforge ammunition in the field** with the **Fletcher's knife**, and carry ammo in a **Fletcher's quiver**.
 
-**Current version:** 1.0.1  
+**Current version:** 1.0.2  
 **Requires:** Valheim 1.0+, BepInExPack (Unity 6), and Jötunn
 
 **Links**
@@ -144,6 +144,7 @@ Other players see your equipped quiver on your back. Equip state is synced on yo
 | Arrow shaft | Workbench 1 | Wood ×8, Feathers ×2 → **20** shafts |
 | Needle arrow shaft | Workbench 4 | Feathers ×2 → **20** shafts |
 | Ashwood arrow shaft | Workbench 3 | Black wood ×8, Feathers ×2 → **20** shafts |
+| Timberwood arrow shaft | Black forge 1 | Timberwood ×8, Feathers ×2 → **20** shafts |
 
 ### Arrowheads (inventory stack **200**)
 
@@ -162,6 +163,7 @@ Craft output is always **20** per recipe batch. Dropped heads use the **arrowhea
 | Needle | Workbench 4 | Needle ×4 |
 | Carapace | Black forge 1 | Carapace ×4 |
 | Charred | Black forge 3 | Charred bone ×4 |
+| Bloodgold | Black forge 1 | Bloodgold ×1 |
 
 ---
 
@@ -203,6 +205,7 @@ Results go into your **inventory** immediately.
 | Needle | Needle | Needle |
 | Carapace | Standard | Carapace |
 | Charred | Ashwood | Charred |
+| Bloodgold | Timberwood | Bloodgold |
 
 ---
 

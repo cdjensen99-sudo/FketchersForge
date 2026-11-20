@@ -21,6 +21,7 @@ internal static class ArrowAssemblyRegistry
         "BoltBlackmetal",
         "BoltCarapace",
         "BoltCharred",
+        "BoltBloodGold",
     };
 
     internal static void Initialize()
@@ -37,6 +38,7 @@ internal static class ArrowAssemblyRegistry
         Register("ArrowNeedle", ModConstants.ShaftNeedle, ModConstants.HeadNeedle, "ArrowNeedle");
         Register("ArrowCarapace", ModConstants.ShaftStandard, ModConstants.HeadCarapace, "ArrowCarapace");
         Register("ArrowCharred", ModConstants.ShaftAsh, ModConstants.HeadCharred, "ArrowCharred");
+        Register("ArrowBloodGold", ModConstants.ShaftTimber, ModConstants.HeadBloodGold, "ArrowBloodGold");
     }
 
     private static void Register(string arrow, string shaft, string head, string arrowPrefab)
@@ -102,7 +104,8 @@ internal static class ArrowAssemblyRegistry
         string name = NormalizePrefabName(prefabName);
         return name == ModConstants.ShaftStandard ||
                name == ModConstants.ShaftNeedle ||
-               name == ModConstants.ShaftAsh;
+               name == ModConstants.ShaftAsh ||
+               name == ModConstants.ShaftTimber;
     }
 
     internal static bool IsHeadPrefab(string prefabName) =>

@@ -18,6 +18,8 @@ internal static class LocalizationRegistrar
         loc.AddTranslation("English", "FF_ShaftNeedle_desc", "A feathered shaft for needle arrows.");
         loc.AddTranslation("English", "FF_ShaftAsh", "Ashwood arrow shaft");
         loc.AddTranslation("English", "FF_ShaftAsh_desc", "A dark ashwood shaft with fletching.");
+        loc.AddTranslation("English", "FF_ShaftTimber", "Timberwood arrow shaft");
+        loc.AddTranslation("English", "FF_ShaftTimber_desc", "A Deep North timberwood shaft with fletching.");
         loc.AddTranslation("English", "FF_HeadFire", "Fire arrowhead");
         loc.AddTranslation("English", "FF_HeadFlint", "Flint arrowhead");
         loc.AddTranslation("English", "FF_HeadBronze", "Bronze arrowhead");
@@ -29,6 +31,7 @@ internal static class LocalizationRegistrar
         loc.AddTranslation("English", "FF_HeadNeedle", "Needle arrowhead");
         loc.AddTranslation("English", "FF_HeadCarapace", "Carapace arrowhead");
         loc.AddTranslation("English", "FF_HeadCharred", "Charred arrowhead");
+        loc.AddTranslation("English", "FF_HeadBloodGold", "Bloodgold arrowhead");
         loc.AddTranslation("English", "FF_Quiver", "Fletcher's quiver");
         loc.AddTranslation("English", "FF_Quiver_desc",
             "Right-click in inventory to equip or unequip. While equipped: eight fletcher slots under the backpack, HUD when inventory is closed, and a cosmetic quiver on your back. Hold ~ to free the mouse and click a HUD slot, or hold [ with 1–8.");

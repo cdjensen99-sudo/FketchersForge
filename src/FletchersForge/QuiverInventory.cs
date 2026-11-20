@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using HarmonyLib;
 using Jotunn.Managers;
 using UnityEngine;
@@ -10,6 +11,8 @@ namespace FletchersForge;
 internal static class QuiverInventory
 {
     internal const string ContentsKey = "FF_QuiverInventory";
+    internal const string ContentsWeightKey = "FF_QuiverContentsWeight";
+    internal const string ContentsTeleportKey = "FF_QuiverContentsTeleport";
     internal const string SelectedSlotKey = "FF_QuiverSlot";
     internal const string EquippedKey = "FF_QuiverEquipped";
 
@@ -771,6 +774,7 @@ internal static class QuiverInventory
             inventory.Save(pkg);
             data[ContentsKey] = Convert.ToBase64String(pkg.GetArray());
             data[SelectedSlotKey] = SelectedSlot.ToString();
+            WriteContentsCache(data, inventory);
         }
         finally
         {
@@ -819,22 +823,40 @@ internal static class QuiverInventory
 
     private static float ProbeStoredContentsWeight(ItemDrop.ItemData quiver)
     {
+        Dictionary<string, string> custom = EnsureCustomData(quiver);
+        if (TryReadCachedWeight(custom, out float cached))
+        {
+            return cached;
+        }
+
         if (!TryLoadStoredContents(quiver, EnsureWeightProbe()))
         {
+            WriteContentsCache(custom, weight: 0f, teleportable: true);
             return 0f;
         }
 
-        return weightProbe.GetTotalWeight();
+        float weight = weightProbe.GetTotalWeight();
+        WriteContentsCache(custom, weight, weightProbe.IsTeleportable(false));
+        return weight;
     }
 
     private static bool ProbeStoredContentsTeleportable(ItemDrop.ItemData quiver)
     {
+        Dictionary<string, string> custom = EnsureCustomData(quiver);
+        if (TryReadCachedTeleportable(custom, out bool cached))
+        {
+            return cached;
+        }
+
         if (!TryLoadStoredContents(quiver, EnsureWeightProbe()))
         {
+            WriteContentsCache(custom, weight: 0f, teleportable: true);
             return true;
         }
 
-        return weightProbe.IsTeleportable(false);
+        bool teleportable = weightProbe.IsTeleportable(false);
+        WriteContentsCache(custom, weightProbe.GetTotalWeight(), teleportable);
+        return teleportable;
     }
 
     private static bool TryLoadStoredContents(ItemDrop.ItemData quiver, Inventory probe)
@@ -863,6 +885,47 @@ internal static class QuiverInventory
             probe.RemoveAll();
             return false;
         }
+    }
+
+    private static void WriteContentsCache(Dictionary<string, string> data, Inventory source)
+    {
+        if (data == null || source == null)
+        {
+            return;
+        }
+
+        WriteContentsCache(data, source.GetTotalWeight(), source.IsTeleportable(false));
+    }
+
+    private static void WriteContentsCache(Dictionary<string, string> data, float weight, bool teleportable)
+    {
+        if (data == null)
+        {
+            return;
+        }
+
+        data[ContentsWeightKey] = weight.ToString("R", CultureInfo.InvariantCulture);
+        data[ContentsTeleportKey] = teleportable ? "1" : "0";
+    }
+
+    private static bool TryReadCachedWeight(Dictionary<string, string> data, out float weight)
+    {
+        weight = 0f;
+        return data != null &&
+               data.TryGetValue(ContentsWeightKey, out string text) &&
+               float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out weight);
+    }
+
+    private static bool TryReadCachedTeleportable(Dictionary<string, string> data, out bool teleportable)
+    {
+        teleportable = true;
+        if (data == null || !data.TryGetValue(ContentsTeleportKey, out string text))
+        {
+            return false;
+        }
+
+        teleportable = text == "1";
+        return true;
     }
 
     private static void LoadBound()

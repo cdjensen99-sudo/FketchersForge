@@ -34,6 +34,12 @@ internal static class ItemRegistrar
             ModConstants.ShaftWeight,
             ashTint: true);
 
+        RegisterShaft(
+            ModConstants.ShaftTimber,
+            "$FF_ShaftTimber",
+            "$FF_ShaftTimber_desc",
+            ModConstants.ShaftWeight);
+
         RegisterHead(ModConstants.HeadFire, "$FF_HeadFire", "ArrowFire");
         RegisterHead(ModConstants.HeadFlint, "$FF_HeadFlint", "ArrowFlint");
         RegisterHead(ModConstants.HeadBronze, "$FF_HeadBronze", "ArrowBronze");
@@ -45,6 +51,7 @@ internal static class ItemRegistrar
         RegisterHead(ModConstants.HeadNeedle, "$FF_HeadNeedle", "ArrowNeedle");
         RegisterHead(ModConstants.HeadCarapace, "$FF_HeadCarapace", "ArrowCarapace");
         RegisterHead(ModConstants.HeadCharred, "$FF_HeadCharred", "ArrowCharred");
+        RegisterHead(ModConstants.HeadBloodGold, "$FF_HeadBloodGold", "ArrowBloodGold");
 
         try
         {
@@ -80,6 +87,7 @@ internal static class ItemRegistrar
         ApplyHeadIcon(ModConstants.HeadNeedle, "ArrowNeedle");
         ApplyHeadIcon(ModConstants.HeadCarapace, "ArrowCarapace");
         ApplyHeadIcon(ModConstants.HeadCharred, "ArrowCharred");
+        ApplyHeadIcon(ModConstants.HeadBloodGold, "ArrowBloodGold");
     }
 
     internal static void ApplyDeferredIcons()
@@ -95,6 +103,7 @@ internal static class ItemRegistrar
 
             ApplyWoodShaftIcon(ModConstants.ShaftStandard);
             ApplyWoodShaftIcon(ModConstants.ShaftAsh, ashTint: true);
+            ApplyWoodShaftIcon(ModConstants.ShaftTimber);
             ApplyShaftIcon(ModConstants.ShaftNeedle, "ArrowNeedle");
 
             ApplyHeadIcon(ModConstants.HeadFire, "ArrowFire");
@@ -108,6 +117,7 @@ internal static class ItemRegistrar
             ApplyHeadIcon(ModConstants.HeadNeedle, "ArrowNeedle");
             ApplyHeadIcon(ModConstants.HeadCarapace, "ArrowCarapace");
             ApplyHeadIcon(ModConstants.HeadCharred, "ArrowCharred");
+            ApplyHeadIcon(ModConstants.HeadBloodGold, "ArrowBloodGold");
 
             ApplyDeferredRenderedIcon(knifeItem, "IconRig_FF_FletchersKnife");
             ApplyQuiverIcon(quiverItem);

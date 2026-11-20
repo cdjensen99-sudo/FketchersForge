@@ -4,7 +4,7 @@ internal static class ModConstants
 {
     public const string ModGuid = "hardwire99.fletchersforge";
     public const string ModName = "Fletchers Forge";
-    public const string ModVersion = "1.0.1";
+    public const string ModVersion = "1.0.2";
 
     public const string AssetBundleName = "fletchersforge";
     public const string HeadPouchPrefabName = "FF_HeadPouch";
@@ -42,6 +42,7 @@ internal static class ModConstants
     public const string ShaftStandard = "FF_ShaftStandard";
     public const string ShaftNeedle = "FF_ShaftNeedle";
     public const string ShaftAsh = "FF_ShaftAsh";
+    public const string ShaftTimber = "FF_ShaftTimber";
 
     public const string HeadFire = "FF_HeadFire";
     public const string HeadFlint = "FF_HeadFlint";
@@ -54,6 +55,7 @@ internal static class ModConstants
     public const string HeadNeedle = "FF_HeadNeedle";
     public const string HeadCarapace = "FF_HeadCarapace";
     public const string HeadCharred = "FF_HeadCharred";
+    public const string HeadBloodGold = "FF_HeadBloodGold";
 
     public const float ShaftWeight = 0.05f;
     public const float HeadWeight = 0.05f;

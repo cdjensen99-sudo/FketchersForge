@@ -227,9 +227,10 @@ internal static class InventoryWeightQuiverPatch
     private static void Postfix(Inventory __instance, ref float __result)
     {
         Player player = Player.m_localPlayer;
+        // Do not SyncFromPlayer here — GetTotalWeight runs many times per frame.
+        // Unequipped contents weight is cached on the quiver custom data (see issue #1).
         if (player != null && player.GetInventory() == __instance)
         {
-            QuiverInventory.SyncFromPlayer(player);
             __result += QuiverInventory.GetTotalWeight();
         }
     }
@@ -247,13 +248,9 @@ internal static class InventoryTeleportableQuiverPatch
         }
 
         Player player = Player.m_localPlayer;
-        if (player != null && player.GetInventory() == __instance)
+        if (player != null && player.GetInventory() == __instance && !QuiverInventory.IsTeleportable())
         {
-            QuiverInventory.SyncFromPlayer(player);
-            if (!QuiverInventory.IsTeleportable())
-            {
-                __result = false;
-            }
+            __result = false;
         }
     }
 }
